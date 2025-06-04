@@ -3,12 +3,12 @@ import logging
 from datetime import datetime
 import pandas as pd
 
-# Import only the functions that exist in your paste.py file
-from paste import (
-    prepare_clustered_dataset, 
+# Import pipeline functions from the clustering module
+from clustering import (
+    prepare_clustered_dataset,
     main_matching_pipeline,
     plot_prediction_uncertainty_with_contours,
-    compute_cluster_summary, 
+    compute_cluster_summary,
     compute_pv_potential_by_cluster_year
 )
 
