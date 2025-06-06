@@ -24,57 +24,6 @@ material_config = {
 }
 
 
-def compute_temperature_series(
-    ghi_array,
-    tair_array,
-    ir_down_array,
-    wind_array,
-    zenith_array,
-    material_config,
-    switching_profile,
-    emissivity_profile,
-    alpha_profile
-):
-    """
-    Compute surface temperature time series from hourly ERA5 data with dynamic materials.
-
-    Parameters:
-        ghi_array (np.ndarray): Global horizontal irradiance [W/m²]
-        tair_array (np.ndarray): Air temperature [K]
-        ir_down_array (np.ndarray): Downwelling IR radiation [W/m²]
-        wind_array (np.ndarray): Wind speed [m/s]
-        zenith_array (np.ndarray): Solar zenith angles [degrees]
-        material_config (dict): Panel thermal config
-        switching_profile (dict): State-switching logic
-        emissivity_profile (dict): Emissivity values per state
-        alpha_profile (dict): Absorptivity values per state
-
-    Returns:
-        np.ndarray: Surface temperatures [K]
-    """
-    n = len(ghi_array)
-    T_surface_series = np.zeros(n)
-
-    for i in range(n):
-        try:
-            T_surf = solve_surface_temperature(
-                GHI=ghi_array[i],
-                T_air=tair_array[i],
-                IR_down=ir_down_array[i],
-                wind_speed=wind_array[i],
-                solar_zenith=zenith_array[i],
-                material_config=material_config,
-                switching_profile=switching_profile,
-                emissivity_profile=emissivity_profile,
-                alpha_profile=alpha_profile
-            )
-        except RuntimeError as e:
-            print(f"[{i}] Solver failed: {e}")
-            T_surf = np.nan
-
-        T_surface_series[i] = T_surf
-
-    return T_surface_series
 
 def compute_temperature_series(
     ghi_array,
@@ -278,3 +227,4 @@ def estimate_pv_cell_temperature(GHI, T_air, wind_speed, model="NOCT", noct=45):
 
     else:
         raise ValueError("Unsupported model: choose 'NOCT' or 'Sandia'")
+
