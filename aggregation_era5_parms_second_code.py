@@ -1326,8 +1326,8 @@ def main():
     start_time = time.time()
     
     # HARDCODED PATHS - MODIFY THESE TO YOUR ACTUAL FILE LOCATIONS
-    input_file = r"C:\Users\gindi002\DATASET\New_Era5_dataset_netcdf\era5_2023_merged.nc"
-    output_dir = r"C:\Users\gindi002\DATASET\processed_era5"
+    input_file = os.getenv("ERA5_INPUT_FILE", "era5_2023_merged.nc")
+    output_dir = os.getenv("ERA5_OUTPUT_DIR", "processed_era5")
     
     # Optional: Hardcode spatial subset if needed
     spatial_subset = None

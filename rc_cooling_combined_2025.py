@@ -38,10 +38,10 @@ GRID_LON_RANGE = (-30, 40, 2.0)
 GRID_LAT_RANGE = (35, 70, 2.0)
 
 # Path to your CSV files folder (containing the NASA CSV files with climate data for RC cooling)
-DATA_FOLDER = r"C:\Users\gindi002\.spyder-py3\work_files\RC_potential\qnet"
+DATA_FOLDER = os.getenv("RC_DATA_FOLDER", "qnet")
 
 # (Optional) Path to GRIB data folder; if provided, effective albedo will be extracted from GRIB files.
-GRIB_PATH = r"C:\Path\To\GRIB\Files"  # Set to None if not available
+GRIB_PATH = os.getenv("GRIB_PATH")  # Set to None if not available
 
 ##############################################################################
 #         GRIB HELPER FUNCTION
@@ -807,3 +807,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

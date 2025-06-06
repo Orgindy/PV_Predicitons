@@ -328,8 +328,8 @@ def process_directory(input_dir, output_dir):
         print("-" * 60)
 
 def main():
-    input_dir = r"C:\Users\gindi002\DATASET\smarts_out_files"
-    output_dir = r"C:\Users\gindi002\DATASET\processed_spectral"
+    input_dir = os.getenv("SMARTS_INPUT_DIR", "smarts_out_files")
+    output_dir = os.getenv("SMARTS_OUTPUT_DIR", "processed_spectral")
 
     process_directory(input_dir, output_dir)
 

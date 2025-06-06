@@ -1,0 +1,14 @@
+numpy
+pandas
+scikit-learn
+scikit-learn-extra
+xarray
+matplotlib
+cartopy
+geopandas
+pykrige
+tqdm
+cfgrib
+plotly
+streamlit
+

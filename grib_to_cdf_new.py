@@ -12,10 +12,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Hardcoded paths - CHANGE THESE TO YOUR ACTUAL PATHS
-GRIB_FOLDER = r"C:\Users\gindi002\DATASET\grib_files"  # Directory containing GRIB files
-NETCDF_OUTPUT_FOLDER = r"C:\Users\gindi002\DATASET\netcdf_files"  # Directory for individual NetCDF files
-MERGED_NETCDF_FILE = r"C:\Users\gindi002\DATASET\New_Era5_dataset_netcdf\era5_2023_merged.nc"  # Path for final merged file
-TEMP_DIR = r"C:\Users\gindi002\DATASET\temp"  # Temporary directory for intermediate files
+GRIB_FOLDER = os.getenv("GRIB_FOLDER", "grib_files")  # Directory containing GRIB files
+NETCDF_OUTPUT_FOLDER = os.getenv("NETCDF_OUTPUT_FOLDER", "netcdf_files")  # Directory for individual NetCDF files
+MERGED_NETCDF_FILE = os.getenv("MERGED_NETCDF_FILE", "era5_2023_merged.nc")  # Path for final merged file
+TEMP_DIR = os.getenv("TEMP_DIR", "temp")  # Temporary directory for intermediate files
 
 # Configuration
 MAX_FILES_IN_MEMORY = 5  # Maximum number of files to open simultaneously for merging
@@ -518,3 +518,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
