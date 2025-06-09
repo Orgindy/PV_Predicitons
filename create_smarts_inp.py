@@ -1863,53 +1863,6 @@ def main():
         return 1
     finally:
         stats['processing_time'] = time.time() - start_time
-
-        # Select only needed time range
-        if args.days:
-            day_timestamps = [pd.to_datetime(day["date"]) for day in days]
-            min_date = min(day_timestamps) - pd.Timedelta(days=1)
-            max_date = max(day_timestamps) + pd.Timedelta(days=1)
-            logger.info(f"Filtering dataset to time range: {min_date.date()} to {max_date.date()}")
-            ds = ds.sel(time=slice(min_date, max_date))
-
-    # ✅ Call the processor here
-            success_count, error_count, skipped_count, successful_files, failed_list = batch_process_locations(
-            locations, days, time_points, ds, args, stats, elevation_df
-    )
-
-        # ✅ Update stats
-            stats['successful'] = success_count
-            stats['errors'] = error_count
-            stats['skipped'] = skipped_count
-            failed_files.extend(failed_list)
-            
-            # Select only needed time range to reduce memory usage
-            if args.days:
-                # Parse all day timestamps to determine date range
-                day_timestamps = [pd.to_datetime(day["date"]) for day in days]
-                min_date = min(day_timestamps) - pd.Timedelta(days=1)
-                max_date = max(day_timestamps) + pd.Timedelta(days=1)
-                
-                # Filter dataset by time range
-                logger.info(f"Filtering dataset to time range: {min_date.date()} to {max_date.date()}")
-                ds = ds.sel(time=slice(min_date, max_date))
-            
-            # Process all locations and times
-            success_count, error_count, skipped_count, successful_files, failed_list = batch_process_locations(
-                locations, days, time_points, ds, args, stats, elevation_df
-            )
-            
-            # Update statistics
-            stats['successful'] = success_count
-            stats['errors'] = error_count
-            stats['skipped'] = skipped_count
-            failed_files.extend(failed_list)
-            
-    except Exception as e:
-        logger.error(f"Error processing ERA5 data: {e}")
-        return 1
-    finally:
-        stats['processing_time'] = time.time() - start_time
         
     # Write error log if there are failures
     if failed_files:

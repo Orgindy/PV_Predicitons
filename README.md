@@ -9,16 +9,16 @@ This repository contains a collection of scripts to process climate data and eva
 - Streamlit dashboard (`app.py`)
 
 ## Requirements
-Install dependencies from `requirements.txt`:
+Install dependencies from `requirements.txt` before running any of the scripts or tests:
 
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Running Tests
-Unit tests use `pytest`. Execute them with:
+Unit tests use `pytest`. Ensure the dependencies are installed first, then run:
 
 ```bash
-pytest
+pytest -q
 ```
 
