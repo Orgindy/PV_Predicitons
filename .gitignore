@@ -11,6 +11,10 @@ secrets.json
 # Ignore Jupyter checkpoints
 .ipynb_checkpoints/
 
+# Ignore Python cache directories
+__pycache__/
+tests/__pycache__/
+
 # Ignore system files
 .DS_Store
 Thumbs.db
