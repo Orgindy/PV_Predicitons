@@ -2,6 +2,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import argparse
 from scipy.spatial import cKDTree
 import plotly.express as px
 import plotly.graph_objects as go
@@ -9,6 +10,19 @@ import io
 import zipfile
 import warnings
 warnings.filterwarnings('ignore')
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run Streamlit PV dashboard")
+    parser.add_argument(
+        "--data-path",
+        default="matched_dataset.csv",
+        help="Path to matched dataset CSV",
+    )
+    return parser.parse_args()
+
+ARGS = parse_args()
+DATA_PATH = ARGS.data_path
 
 def compute_temperature_series(ghi, tair, ir_down, wind, zenith, material_config, 
                              switching_profile, emissivity_profile, alpha_profile):
@@ -185,7 +199,7 @@ with st.expander("ℹ️ How this tool works"):
     """)
     
 @st.cache_data
-def load_cluster_dataset(csv_path="matched_dataset.csv"):
+def load_cluster_dataset(csv_path=DATA_PATH):
     """
     Load cluster dataset with comprehensive error handling and column detection.
     
@@ -258,12 +272,14 @@ def load_cluster_dataset(csv_path="matched_dataset.csv"):
         
     except FileNotFoundError:
         st.error(f"❌ Dataset file not found: {csv_path}")
-        st.info("""
+        st.info(
+            f"""
         **To use this tool:**
         1. Run `main.py` first to generate the matched dataset
-        2. Ensure the file `matched_dataset.csv` exists in your project directory
+        2. Ensure the file `{csv_path}` exists in your project directory
         3. Refresh this page
-        """)
+        """
+        )
         return None, None
         
     except Exception as e:

@@ -22,3 +22,33 @@ Unit tests use `pytest`. Ensure the dependencies are installed first, then run:
 pytest -q
 ```
 
+## Usage
+
+Several scripts now accept file paths via command line arguments:
+
+### Feature Preparation
+
+```bash
+python "Feature Preparation.py" \
+  --input-file data/merged_dataset.csv \
+  --validated-file data/validated_dataset.csv \
+  --physics-file data/physics_dataset.csv \
+  --netcdf-file data/processed_era5/ERA5_daily.nc \
+  --results-dir results
+```
+
+### SMARTS Batch Processing
+
+```bash
+python run_smarts_batch.py \
+  --smarts-exe /path/to/smarts295bat.exe \
+  --inp-dir smarts_inp_files \
+  --out-dir smarts_out_files
+```
+
+### Streamlit Dashboard
+
+```bash
+streamlit run app.py -- --data-path matched_dataset.csv
+```
+

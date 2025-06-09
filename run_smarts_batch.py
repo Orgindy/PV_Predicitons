@@ -3,24 +3,32 @@ import subprocess
 from pathlib import Path
 import time
 from multiprocessing import Pool, cpu_count
+import argparse
 
-# === USER CONFIG ===
-smarts_exe = r"C:\Users\gindi002\SMARTS_295_PC\smarts295bat.exe"
-inp_dir = Path(r"C:\Users\gindi002\DATASET\smarts_inp_files")
-out_dir = Path(r"C:\Users\gindi002\DATASET\smarts_out_files")
-skip_existing = True  # Set to False to force re-run everything
+# === USER CONFIG (overridden by CLI) ===
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Run SMARTS batch simulations")
+    parser.add_argument(
+        "--smarts-exe",
+        default="smarts295bat.exe",
+        help="Path to SMARTS executable",
+    )
+    parser.add_argument(
+        "--inp-dir",
+        default="smarts_inp_files",
+        help="Directory containing SMARTS input files",
+    )
+    parser.add_argument(
+        "--out-dir",
+        default="smarts_out_files",
+        help="Directory for SMARTS output files",
+    )
+    return parser.parse_args()
 
-# === CREATE OUTPUT DIR IF NEEDED ===
-out_dir.mkdir(parents=True, exist_ok=True)
-
-# === GET ALL .INP FILES ===
-inp_files = list(inp_dir.glob("*.inp"))
-
-if not inp_files:
-    print("❌ No .inp files found.")
-    exit()
-
-print(f"🔍 Found {len(inp_files)} .inp files to process.\n")
+smarts_exe = None
+inp_dir = None
+out_dir = None
 
 def validate_smarts_executable(exe_path):
     """Validate that SMARTS executable exists and is accessible"""
@@ -69,7 +77,7 @@ def retry_failed_runs(input_folder, output_folder, max_retries=3, delay=5):
         
         while attempts < max_retries and not success:
             try:
-                command = f"smarts295bat.exe {os.path.join(input_folder, inp_file)}"
+                command = f"{smarts_exe} {os.path.join(input_folder, inp_file)}"
                 try:
                     subprocess.run(command, check=True, shell=True)
                     if os.path.exists(output_file):
@@ -142,7 +150,7 @@ def parallel_process(input_folder, output_folder, max_retries=3, delay=5, proces
         
         while attempts < max_retries and not success:
             try:
-                command = f"smarts295bat.exe {os.path.join(input_folder, inp_file)}"
+                command = f"{smarts_exe} {os.path.join(input_folder, inp_file)}"
                 subprocess.run(command, check=True, shell=True)
                 
                 # Verify output file
@@ -214,11 +222,26 @@ def verify_output_files(input_folder, output_folder):
         print("\n🚨 Some output files are missing or incomplete. Please check the log above.")
 
 def main():
+    global smarts_exe, inp_dir, out_dir
+    args = parse_args()
+    smarts_exe = args.smarts_exe
+    inp_dir = Path(args.inp_dir)
+    out_dir = Path(args.out_dir)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    inp_files = list(inp_dir.glob("*.inp"))
+    if not inp_files:
+        print("❌ No .inp files found.")
+        return
+
+    print(f"🔍 Found {len(inp_files)} .inp files to process.\n")
+
     # Validate SMARTS executable first
     if not validate_smarts_executable(smarts_exe):
         print("❌ Cannot proceed without valid SMARTS executable")
         return
-    
+
     parallel_process(input_folder=str(inp_dir), output_folder=str(out_dir))
     verify_output_files(str(inp_dir), str(out_dir))
 
