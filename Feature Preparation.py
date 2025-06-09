@@ -8,6 +8,38 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.feature_selection import mutual_info_regression
 import os
+import argparse
+
+
+def parse_args():
+    """Parse command line arguments for file paths."""
+    parser = argparse.ArgumentParser(description="Prepare features for PV model")
+    parser.add_argument(
+        "--input-file",
+        default="data/merged_dataset.csv",
+        help="Path to merged dataset CSV",
+    )
+    parser.add_argument(
+        "--validated-file",
+        default="data/validated_dataset.csv",
+        help="Path to save validated CSV",
+    )
+    parser.add_argument(
+        "--physics-file",
+        default="data/physics_dataset.csv",
+        help="Path to save dataset with physics-based PV potential",
+    )
+    parser.add_argument(
+        "--netcdf-file",
+        default="data/processed_era5/ERA5_daily.nc",
+        help="Path to processed ERA5 NetCDF file",
+    )
+    parser.add_argument(
+        "--results-dir",
+        default="results",
+        help="Directory where results will be written",
+    )
+    return parser.parse_args()
 
 # --------------------------------------
 # 1. Physics-based PV potential function
@@ -271,19 +303,13 @@ def calculate_pv_potential_netcdf(df):
     
     return df
 
-def main_csv_workflow():
-    """Main function for CSV-based workflow (original)."""
+def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
+    """CSV-based workflow."""
     import joblib
     import os
 
-    # ⚠️ Hardcoded paths - replace with your actual merged dataset
-    input_file = r"C:\Users\gindi002\DATASET\merged_dataset.csv"
-    validated_file = r"C:\Users\gindi002\DATASET\validated_dataset.csv"
-    physics_file = r"C:\Users\gindi002\DATASET\physics_dataset.csv"
-    
-    # Create results directory
-    os.makedirs("results", exist_ok=True)
-    os.makedirs("results/models", exist_ok=True)
+    os.makedirs(results_dir, exist_ok=True)
+    os.makedirs(os.path.join(results_dir, "models"), exist_ok=True)
     
     # Load initial data
     df = pd.read_csv(input_file)
@@ -303,7 +329,7 @@ def main_csv_workflow():
     print(f"Added physics-based PV potential")
 
     # Save final processed dataset
-    final_output = "results/merged_with_physics_pv.csv"
+    final_output = os.path.join(results_dir, "merged_with_physics_pv.csv")
     df.to_csv(final_output, index=False)
     print(f"✅ Final dataset saved to {final_output}")
 
@@ -341,7 +367,7 @@ def main_csv_workflow():
     print(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}")
 
     # --- Save model ---
-    model_path = "results/models/rf_pv_model.joblib"
+    model_path = os.path.join(results_dir, "models", "rf_pv_model.joblib")
     joblib.dump(model, model_path)
     print(f"💾 Random Forest model saved to: {model_path}")
 
@@ -357,9 +383,9 @@ def main_csv_workflow():
     sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
     plt.title("Feature Importance (Random Forest)")
     plt.tight_layout()
-    plt.savefig("results/feature_importance_plot.png", dpi=300)
+    plt.savefig(os.path.join(results_dir, "feature_importance_plot.png"), dpi=300)
     plt.close()
-    print("📊 Feature importance plot saved to results/feature_importance_plot.png")
+    print(f"📊 Feature importance plot saved to {os.path.join(results_dir, 'feature_importance_plot.png')}")
 
     # Clean up temporary files
     for temp_file in [temp_input]:
@@ -368,15 +394,10 @@ def main_csv_workflow():
     
     print("\n✅ CSV-based feature preparation completed successfully!")
 
-def main_netcdf_workflow():
-    """Main function for NetCDF-based workflow (new)."""
+def main_netcdf_workflow(netcdf_file, results_dir):
+    """NetCDF-based workflow."""
     import joblib
-    
-    # HARDCODED PATHS - UPDATE THESE
-    netcdf_file = r"C:\Users\gindi002\DATASET\processed_era5\ERA5_daily_20241228_123456.nc"  # Your processed NetCDF
-    results_dir = r"C:\Users\gindi002\DATASET\results"
-    
-    # Create results directory
+
     os.makedirs(results_dir, exist_ok=True)
     os.makedirs(os.path.join(results_dir, "models"), exist_ok=True)
     
@@ -450,27 +471,19 @@ def main_netcdf_workflow():
     print("\n✅ NetCDF-based feature preparation completed!")
 
 def main():
-    """
-    Main function - choose workflow based on available data.
-    """
-    import os
-    
-    # Choose which workflow to run
-    netcdf_file = r"C:\Users\gindi002\DATASET\processed_era5\ERA5_daily_20241228_123456.nc"
-    csv_file = r"C:\Users\gindi002\DATASET\merged_dataset.csv"
-    
-    # Check which files exist and run appropriate workflow
-    if os.path.exists(netcdf_file):
+    """Entry point for command line execution."""
+    args = parse_args()
+
+    if os.path.exists(args.netcdf_file):
         print("🌐 NetCDF file found - running NetCDF workflow")
-        main_netcdf_workflow()
-    elif os.path.exists(csv_file):
+        main_netcdf_workflow(args.netcdf_file, args.results_dir)
+    elif os.path.exists(args.input_file):
         print("📊 CSV file found - running CSV workflow")
-        main_csv_workflow()
+        main_csv_workflow(args.input_file, args.validated_file, args.physics_file, args.results_dir)
     else:
         print("❌ Neither NetCDF nor CSV file found")
-        print(f"Looking for NetCDF: {netcdf_file}")
-        print(f"Looking for CSV: {csv_file}")
-        print("Please update the file paths in the script")
+        print(f"Looking for NetCDF: {args.netcdf_file}")
+        print(f"Looking for CSV: {args.input_file}")
 
 if __name__ == "__main__":
     main()
