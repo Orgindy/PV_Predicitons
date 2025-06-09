@@ -11,4 +11,6 @@ tqdm
 cfgrib
 plotly
 streamlit
+netCDF4
+pvlib
 
