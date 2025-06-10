@@ -28,6 +28,14 @@ Unit tests use `pytest`. Install the dependencies first (for example by running
 pytest -q
 ```
 
+### Linting
+
+Run `flake8` to check for syntax errors in the codebase:
+
+```bash
+flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+```
+
 ## Database Integration
 
 Several scripts can read from or write to a SQL database using SQLAlchemy. Set
@@ -38,6 +46,13 @@ Example using SQLite:
 
 ```bash
 export PV_DB_URL=sqlite:///path/to/pv.sqlite
+python "Feature Preparation.py" --db-url $PV_DB_URL --db-table raw_pv_data
+```
+
+For PostgreSQL use a URL of the form `postgresql://user:pass@localhost/dbname`:
+
+```bash
+export PV_DB_URL=postgresql://user:secret@localhost/pvdb
 python "Feature Preparation.py" --db-url $PV_DB_URL --db-table raw_pv_data
 ```
 
@@ -82,3 +97,33 @@ file.
 python multi_year_controller.py
 ```
 
+
+## Script Descriptions
+
+- **Feature Preparation.py** – Prepares PV features from CSV or NetCDF, with optional database I/O.
+- **Metadata Inspection.py** – Prints NetCDF metadata for inspection.
+- **PV prediction.py** – Performs PV model training and cluster predictions.
+- **RC_Clustering.py** – Clusters RC metrics and visualizes overlay maps.
+- **Spatial Mapping.py** – Creates spatial interpolation maps from RC results.
+- **aggregation_era5_parms_second_code.py** – Processes ERA5 NetCDF files and aggregates meteorological variables.
+- **app.py** – Streamlit dashboard for exploring PV and RC data.
+- **clustering.py** – Core clustering utilities used by the pipeline.
+- **clustering_methods.py** – Wrapper functions to compare clustering algorithms.
+- **compare_clustering_methods.py** – Script to evaluate clustering techniques.
+- **create_smarts_inp.py** – Generates SMARTS input files from ERA5 data.
+- **data_loader.py** – Helper for loading scenario arrays from disk.
+- **database_utils.py** – SQLAlchemy helpers to read/write pandas DataFrames.
+- **dynamic_materials.py** – Models emissivity changes for smart materials.
+- **enhanced_thermal_model.py** – Computes surface temperature time series.
+- **grib_to_cdf_new.py** – Converts GRIB weather data to NetCDF format.
+- **humidity.py** – Calculates relative humidity via the Magnus formula.
+- **main.py** – Runs the full RC–PV matching pipeline with optional DB support.
+- **multi_year_controller.py** – Repeats the matching pipeline for several years.
+- **pv_potential.py** – Calculates PV performance metrics.
+- **rc_climate_zoning.py** – Creates RC climate zoning maps.
+- **rc_cooling_combined_2025.py** – End-to-end RC potential computation and kriging.
+- **run_smarts_batch.py** – Executes SMARTS simulations in parallel.
+- **smarts_processor.py** – Parses SMARTS outputs to produce spectral datasets.
+- **spectral_data_analisys.py** – Analyzes SMARTS spectra and produces plots.
+- **synergy_index.py** – Computes synergy metrics between PV and RC technologies.
+- **visualize_rc_maps.py** – Generates maps from RC datasets.
