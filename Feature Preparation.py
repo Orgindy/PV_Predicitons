@@ -39,6 +39,16 @@ def parse_args():
         default="results",
         help="Directory where results will be written",
     )
+    parser.add_argument(
+        "--db-url",
+        default=os.getenv("PV_DB_URL"),
+        help="Optional database URL for reading/writing data",
+    )
+    parser.add_argument(
+        "--db-table",
+        default=os.getenv("PV_DB_TABLE", "pv_data"),
+        help="Database table name if --db-url is provided",
+    )
     return parser.parse_args()
 
 # --------------------------------------
@@ -474,7 +484,23 @@ def main():
     """Entry point for command line execution."""
     args = parse_args()
 
-    if os.path.exists(args.netcdf_file):
+    if args.db_url:
+        from database_utils import read_table, write_dataframe
+        try:
+            df_db = read_table(args.db_table, db_url=args.db_url)
+        except Exception as e:
+            print(f"❌ Failed to read table {args.db_table}: {e}")
+            return
+        temp_path = "db_input.csv"
+        df_db.to_csv(temp_path, index=False)
+        main_csv_workflow(temp_path, args.validated_file, args.physics_file, args.results_dir)
+        final_csv = os.path.join(args.results_dir, "merged_with_physics_pv.csv")
+        if os.path.exists(final_csv):
+            processed = pd.read_csv(final_csv)
+            write_dataframe(processed, args.db_table, db_url=args.db_url, if_exists="replace")
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+    elif os.path.exists(args.netcdf_file):
         print("🌐 NetCDF file found - running NetCDF workflow")
         main_netcdf_workflow(args.netcdf_file, args.results_dir)
     elif os.path.exists(args.input_file):

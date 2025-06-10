@@ -28,6 +28,19 @@ Unit tests use `pytest`. Install the dependencies first (for example by running
 pytest -q
 ```
 
+## Database Integration
+
+Several scripts can read from or write to a SQL database using SQLAlchemy. Set
+the `PV_DB_URL` environment variable or use the `--db-url` and `--db-table`
+options to enable this feature.
+
+Example using SQLite:
+
+```bash
+export PV_DB_URL=sqlite:///path/to/pv.sqlite
+python "Feature Preparation.py" --db-url $PV_DB_URL --db-table raw_pv_data
+```
+
 ## Usage
 
 Several scripts now accept file paths via command line arguments:
