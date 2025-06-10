@@ -46,11 +46,12 @@ def show_metadata(nc_path: str):
     ds.close()
 
 if __name__ == "__main__":
-    import os
+    import argparse
+    parser = argparse.ArgumentParser(description="Inspect NetCDF metadata")
+    parser.add_argument("nc_file", help="Path to NetCDF file")
+    args = parser.parse_args()
 
-    nc_file = r"C:\Users\gindi002\DATASET\New_Era5_dataset_netcdf\era5_2023_merged.nc"
-
-    if not os.path.exists(nc_file):
-        print(f"❌ File not found: {nc_file}")
+    if not os.path.exists(args.nc_file):
+        print(f"❌ File not found: {args.nc_file}")
     else:
-        show_metadata(nc_file)
+        show_metadata(args.nc_file)
