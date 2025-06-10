@@ -281,8 +281,8 @@ def load_and_process_csv_files(folder_path: str,
                 chunk['time'] = pd.NaT
 
             # If GRIB path is provided, add effective_albedo column using row-wise lookup.
-                if grib_path:
-                    chunk = add_effective_albedo_optimized(chunk, grib_path)
+            if grib_path:
+                chunk = add_effective_albedo_optimized(chunk, grib_path)
             # Calculate QNET for this chunk.
             chunk['QNET'] = calculate_qnet_vectorized(chunk)
             df_list.append(chunk)
