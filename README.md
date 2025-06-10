@@ -52,3 +52,14 @@ python run_smarts_batch.py \
 streamlit run app.py -- --data-path matched_dataset.csv
 ```
 
+### Multi-Year PV Technology Matching
+
+Run the clustering and technology matching pipeline for several yearly datasets.
+The script looks for `clustered_dataset_<year>.csv` files in a given directory
+and produces technology-matched outputs for each year along with a combined
+file.
+
+```bash
+python multi_year_controller.py
+```
+
