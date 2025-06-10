@@ -41,6 +41,17 @@ export PV_DB_URL=sqlite:///path/to/pv.sqlite
 python "Feature Preparation.py" --db-url $PV_DB_URL --db-table raw_pv_data
 ```
 
+### Local database setup
+
+If your database file is on your local drive, provide the absolute path with the
+`sqlite:///` scheme. The same URL can be used with `main.py` or any script that
+accepts the `--db-url` option:
+
+```bash
+export PV_DB_URL="sqlite:////full/path/to/pv.sqlite"
+python main.py --db-url $PV_DB_URL --db-table pv_data
+```
+
 ## Usage
 
 Several scripts now accept file paths via command line arguments:
