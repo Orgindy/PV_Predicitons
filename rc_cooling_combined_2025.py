@@ -116,34 +116,6 @@ def get_effective_albedo(grib_path: str, timestamp: pd.Timestamp, lat: float, lo
 #         QNET CALCULATION FUNCTIONS (Vectorized Implementation)
 ##############################################################################
 
-def compute_wavelength_dependent_emissivity(T_surface, wavelengths, emissivity, RC_potential):
-    """
-    Calculates the radiative cooling potential with wavelength-dependent emissivity.
-    
-    Parameters:
-    - T_surface (float): Surface temperature in Kelvin.
-    - wavelengths (np.array): Array of wavelengths (μm).
-    - emissivity (np.array): Emissivity values for each wavelength.
-    - RC_potential (float): Base radiative cooling potential.
-    
-    Returns:
-    - Q_net (float): Net radiative cooling power.
-    """
-    h = 6.626e-34  # Planck constant (J s)
-    c = 3e8        # Speed of light (m/s)
-    k = 1.381e-23  # Boltzmann constant (J/K)
-
-    # Calculate spectral radiance using Planck's law
-    radiance = (2 * h * c ** 2) / (wavelengths ** 5) / (np.exp((h * c) / (wavelengths * k * T_surface)) - 1)
-    
-    # Apply emissivity correction
-    radiative_power = radiance * emissivity
-    
-    # Integrate over all wavelengths
-    Q_net = np.trapz(radiative_power, wavelengths) * RC_potential
-    
-    return Q_net
-
 
 def calculate_qnet_vectorized(df: pd.DataFrame,
                               sigma: float = STEFAN_BOLTZMANN,
