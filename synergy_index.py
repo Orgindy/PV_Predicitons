@@ -39,7 +39,10 @@ def calculate_synergy_index(
         raise ValueError("Input arrays must have the same length")
     
     delta_T = T_pv - T_rc  # Cooling benefit [°C]
-    delta_P = gamma_pv * delta_T * GHI  # Instantaneous PV power gain [W/m²]
+    # PV temperature coefficient is typically negative (efficiency drops with
+    # higher cell temperature). The benefit from radiative cooling should be
+    # positive, so we use the absolute value here.
+    delta_P = abs(gamma_pv) * delta_T * GHI  # Instantaneous PV power gain [W/m²]
 
     if rc_cooling_energy is None:
         rc_cooling_energy = np.zeros_like(delta_P)
@@ -86,7 +89,9 @@ def add_synergy_index_to_dataset_vectorized(csv_path, output_path=None, gamma_pv
     
     # Vectorized calculation - much faster than row-by-row
     delta_T = df["T_PV"] - df["T_RC"]  # Temperature reduction benefit
-    delta_P = gamma_pv * delta_T * df["GHI"]  # PV power gain
+    # Use absolute value so a negative PV temperature coefficient results in a
+    # positive power gain when cooling lowers the cell temperature.
+    delta_P = abs(gamma_pv) * delta_T * df["GHI"]  # PV power gain
     
     # Add RC cooling energy if available
     if rc_energy_col and rc_energy_col in df.columns:
