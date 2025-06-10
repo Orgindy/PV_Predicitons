@@ -606,14 +606,20 @@ def rc_only_clustering(df, n_clusters=5):
 
 
 if __name__ == "__main__":
-    # Run multi-year clustering
+    import argparse
+    parser = argparse.ArgumentParser(description="Run PV prediction pipeline")
+    parser.add_argument("--input-dir", default="data/merged_years")
+    parser.add_argument("--output-dir", default="results/clusters")
+    parser.add_argument("--n-clusters", type=int, default=5)
+    parser.add_argument("--file-pattern", default="merged_dataset_*.csv")
+    args = parser.parse_args()
+
     summary = multi_year_clustering(
-        input_dir='data/merged_years',
-        output_dir='results/clusters',
-        n_clusters=5,
-        file_pattern='merged_dataset_*.csv'
+        input_dir=args.input_dir,
+        output_dir=args.output_dir,
+        n_clusters=args.n_clusters,
+        file_pattern=args.file_pattern,
     )
 
-    # Run seasonal + tech summary + plot output
     if summary is not None:
-        summarize_and_plot_multi_year_clusters(summary, output_dir='results/clusters')
+        summarize_and_plot_multi_year_clusters(summary, output_dir=args.output_dir)

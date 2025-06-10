@@ -2,6 +2,7 @@ import os
 import logging
 from datetime import datetime
 import pandas as pd
+import argparse
 
 # Import pipeline functions from the clustering module
 from clustering import (
@@ -12,12 +13,18 @@ from clustering import (
     compute_pv_potential_by_cluster_year
 )
 
-def check_required_files():
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run RC-PV pipeline")
+    parser.add_argument("--mode", default="full", choices=["full", "prep", "cluster"], help="Pipeline mode")
+    parser.add_argument("--input-file", default="clustered_dataset.csv", help="Path to input CSV file")
+    parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"), help="Optional database URL")
+    parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"), help="Table name if using DB")
+    return parser.parse_args()
+
+def check_required_files(input_file):
     """Check if required input files exist."""
-    required_files = [
-        "clustered_dataset.csv",
-        # Add other files you need
-    ]
+    required_files = [input_file]
     
     missing_files = []
     for file_path in required_files:
@@ -29,18 +36,26 @@ def check_required_files():
         return False
     return True
 
-def main_rc_pv_pipeline():
+def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
     """Complete RC-PV pipeline using available functions."""
-    
-    # Define file paths
-    input_path = "clustered_dataset.csv"
+
     processed_path = "data/clustered_dataset_enhanced.csv"
     output_path = "matched_dataset.csv"
-    
+
     # Create output directories
     os.makedirs("data", exist_ok=True)
     os.makedirs("results", exist_ok=True)
     os.makedirs("results/maps", exist_ok=True)
+
+    if db_url:
+        from database_utils import read_table, write_dataframe
+        try:
+            df_db = read_table(db_table, db_url=db_url)
+        except Exception as e:
+            logging.error(f"Failed to read table {db_table}: {e}")
+            return None
+        input_path = "db_input.csv"
+        df_db.to_csv(input_path, index=False)
     
     # Step 1: Prepare and enhance dataset
     logging.info("🧼 Step 1: Preparing enhanced dataset")
@@ -105,7 +120,15 @@ def main_rc_pv_pipeline():
         logging.info("✅ Uncertainty map generated")
     except Exception as e:
         logging.warning(f"Map generation failed: {e}")
-    
+
+    if db_url and df_result is not None:
+        from database_utils import write_dataframe
+        try:
+            write_dataframe(df_result, db_table, db_url=db_url, if_exists="replace")
+            logging.info(f"✅ Results written to database table {db_table}")
+        except Exception as e:
+            logging.warning(f"Failed to write results to DB: {e}")
+
     logging.info("✅ Pipeline completed successfully")
     return df_result
 
@@ -159,26 +182,21 @@ def run_clustering_only():
     
 def main():
     """Main execution function with error handling and options."""
-    
-    # Check command line arguments for different modes
-    import sys
-    
-    mode = "full"  # Default mode
-    if len(sys.argv) > 1:
-        mode = sys.argv[1].lower()
+
+    args = parse_args()
+    mode = args.mode
     
     logging.info(f"🚀 Starting RC-PV pipeline in '{mode}' mode")
-    
+
     # Check for required files
-    if not check_required_files():
+    if not check_required_files(args.input_file):
         logging.error("❌ Missing required input files")
         logging.info("Please ensure 'clustered_dataset.csv' exists in your working directory")
         return
     
     try:
         if mode == "full":
-            # Run complete pipeline
-            result = main_rc_pv_pipeline()
+            result = main_rc_pv_pipeline(args.input_file, args.db_url, args.db_table)
             
         elif mode == "prep":
             # Run only data preparation

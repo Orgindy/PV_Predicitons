@@ -217,5 +217,9 @@ def run_rc_zoning_pipeline(input_csv,
     print("✅ Pipeline complete.")
 
 if __name__ == "__main__":
-    run_rc_zoning_pipeline("input.csv")  # Replace with your actual path
+    import argparse
+    parser = argparse.ArgumentParser(description="Run RC climate zoning pipeline")
+    parser.add_argument("--input", default="input.csv", help="Path to input CSV")
+    args = parser.parse_args()
+    run_rc_zoning_pipeline(args.input)
 

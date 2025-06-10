@@ -77,14 +77,17 @@ def multi_year_matching_pipeline(
 
 
 if __name__ == "__main__":
-    years = [2020, 2021, 2022, 2023]
-    base_input_path = "results/clusters/"
-    output_dir = "results/matching/"
-    borders_path = "data/borders/ne_10m_admin_0_countries.shp"
+    import argparse
+    parser = argparse.ArgumentParser(description="Run multi-year matching")
+    parser.add_argument("--years", nargs="+", type=int, default=[2020, 2021, 2022, 2023])
+    parser.add_argument("--base-input", default="results/clusters/")
+    parser.add_argument("--output-dir", default="results/matching/")
+    parser.add_argument("--borders-path", default="data/borders/ne_10m_admin_0_countries.shp")
+    args = parser.parse_args()
 
     multi_year_matching_pipeline(
-        years,
-        base_input_path,
-        output_dir,
-        borders_path,
+        args.years,
+        args.base_input,
+        args.output_dir,
+        args.borders_path,
     )
