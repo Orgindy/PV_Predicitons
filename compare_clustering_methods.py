@@ -179,3 +179,7 @@ def create_comparison_plots(df, X, scores):
         
     except Exception as e:
         print(f"⚠️ Could not create plots: {e}")
+
+
+if __name__ == "__main__":
+    main()
