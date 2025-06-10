@@ -1,3 +1,4 @@
+import os
 import xarray as xr
 import json
 from pprint import pprint
