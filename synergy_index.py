@@ -4,6 +4,7 @@ Created on Mon May 26 12:21:06 2025
 
 @author: Gindi002
 """
+import os
 import pandas as pd
 import numpy as np
 
@@ -111,6 +112,11 @@ def add_synergy_index_to_dataset_vectorized(csv_path, output_path=None, gamma_pv
 
     if output_path is None:
         output_path = csv_path
+
+    # Ensure output directory exists if a directory component is provided
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
 
     df.to_csv(output_path, index=False)
     print(f"✅ Synergy index added and saved to: {output_path}")
