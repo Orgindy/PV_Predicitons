@@ -1653,13 +1653,14 @@ def main():
     args = parser.parse_args()
    
     # Add these lines after parsing arguments
-    args.input = r"C:\Users\gindi002\DATASET\New_Era5_dataset_netcdf\era5_2023_merged.nc"  # Replace with your actual path
-    args.output = r"C:\Users\gindi002\DATASET\smarts_inp_files"  # Replace with your actual path
-    args.metadata = r"C:\Users\gindi002\DATASET\smarts_inp_files\metadata"  # Replace with your actual path
-    # Optional: hardcode other parameters as needed
-    args.elevation_file = r"C:\Users\gindi002\DATASET\Nasa_Power\elevation_summary.csv"  # Replace with your actual path
-    args.format = "standard"  # Use standard, compact, or detailed
-    args.parallel = True  # Enable parallel processing
+    # The following assignments were used for local testing. Commented out to
+    # allow command-line arguments to take precedence.
+    # args.input = r"C:\Users\gindi002\DATASET\New_Era5_dataset_netcdf\era5_2023_merged.nc"
+    # args.output = r"C:\Users\gindi002\DATASET\smarts_inp_files"
+    # args.metadata = r"C:\Users\gindi002\DATASET\smarts_inp_files\metadata"
+    # args.elevation_file = r"C:\Users\gindi002\DATASET\Nasa_Power\elevation_summary.csv"
+    # args.format = "standard"  # Use standard, compact, or detailed
+    # args.parallel = True  # Enable parallel processing
 
 
     # Run unit tests if requested
