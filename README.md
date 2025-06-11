@@ -50,6 +50,10 @@ accepts the `--db-url` option:
 ```bash
 export PV_DB_URL="sqlite:////full/path/to/pv.sqlite"
 python main.py --db-url $PV_DB_URL --db-table pv_data
+
+To quickly verify the connection works, run `check_db_connection.py`:
+```bash
+python check_db_connection.py --db-url $PV_DB_URL
 ```
 
 ## Usage
