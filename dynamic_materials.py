@@ -4,7 +4,6 @@ Created on Mon May 26 11:33:12 2025
 
 @author: Gindi002
 """
-from pvlib.solarposition import get_solarposition
 import pandas as pd
 try:
     from pvlib.solarposition import get_solarposition

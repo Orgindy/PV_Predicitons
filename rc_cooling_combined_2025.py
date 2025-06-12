@@ -414,11 +414,9 @@ def multi_year_kriging(rc_folder, output_file, cluster_file=None, lat_col='latit
         df['RC_Kriged'] = z
         final_df = df
     
-    # Save final kriged data
+    # Save final kriged data once
     final_df.to_csv(output_file, index=False)
     print(f"✅ Multi-year kriged data saved to {output_file}")
-    final_df.to_csv(output_file, index=False)
-    print(f"✅ Kriged output saved to {output_file}")
 
 def aggregate_rc_metrics(kriged_file, output_file, cluster_col='Cluster_ID'):
     """
@@ -504,28 +502,22 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     annual_stats.columns = ['LAT', 'LON', 'year', 'QNET_annual_mean', 'QNET_annual_total']
     return annual_stats
 
-""" #def compute_relative_humidity(T_air_K, T_dew_K):
- #   
-  #  Compute relative humidity (%) using the Magnus formula.
-#
- #   Parameters:
-  #      T_air_K (float or np.ndarray or pd.Series): Air temperature in Kelvin
-   #     T_dew_K (float or np.ndarray or pd.Series): Dew point temperature in Kelvin
-#
- #   Returns:
-  #      Relative humidity in percentage (0–100%)
-   # 
-    #T_air = np.array(T_air_K) - 273.15
-    #T_dew = np.array(T_dew_K) - 273.15
-
-   # a = 17.625
-    #b = 243.04
-
-    #e_s = np.exp((a * T_air) / (b + T_air))
-    #e_d = np.exp((a * T_dew) / (b + T_dew))
-    #RH = 100.0 * (e_d / e_s)
-    
-    return np.clip(RH, 0, 100)
+# def compute_relative_humidity(T_air_K, T_dew_K):
+#     """Compute relative humidity (%) using the Magnus formula."""
+#     # Parameters:
+#     #     T_air_K (float or np.ndarray or pd.Series): Air temperature in Kelvin
+#     #     T_dew_K (float or np.ndarray or pd.Series): Dew point temperature in Kelvin
+#     # Returns:
+#     #     Relative humidity in percentage (0–100%)
+#     # Example implementation (superseded by humidity.compute_relative_humidity):
+#     # T_air = np.array(T_air_K) - 273.15
+#     # T_dew = np.array(T_dew_K) - 273.15
+#     # a = 17.625
+#     # b = 243.04
+#     # e_s = np.exp((a * T_air) / (b + T_air))
+#     # e_d = np.exp((a * T_dew) / (b + T_dew))
+#     # RH = 100.0 * (e_d / e_s)
+#     # return np.clip(RH, 0, 100)
 
 def calculate_rc_with_albedo(df, albedo_values=[0.3, 0.6, 1.0]):
     results = []
@@ -534,7 +526,7 @@ def calculate_rc_with_albedo(df, albedo_values=[0.3, 0.6, 1.0]):
         df_copy['Albedo'] = alb
         df_copy = calculate_day_night_rc_power(df_copy, albedo=alb)
         results.append(df_copy)
-    return pd.concat(results) """
+    return pd.concat(results)
 
 def estimate_sky_temperature_hybrid(df):
     """
