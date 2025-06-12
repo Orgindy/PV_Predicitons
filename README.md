@@ -60,6 +60,17 @@ python check_db_connection.py --db-url $PV_DB_URL
 
 Several scripts now accept file paths via command line arguments:
 
+**Note on quoting script names**
+Scripts whose filenames contain spaces must be wrapped in quotes when executed.
+Examples:
+
+```bash
+python "Feature Preparation.py" --help
+python "PV prediction.py" --help
+python "Spatial Mapping.py" --help
+python "Metadata Inspection.py" --help
+```
+
 ### Feature Preparation
 
 ```bash
