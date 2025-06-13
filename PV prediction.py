@@ -612,14 +612,30 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", default="results/clusters")
     parser.add_argument("--n-clusters", type=int, default=5)
     parser.add_argument("--file-pattern", default="merged_dataset_*.csv")
+    parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
+    parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"))
     args = parser.parse_args()
 
-    summary = multi_year_clustering(
-        input_dir=args.input_dir,
-        output_dir=args.output_dir,
-        n_clusters=args.n_clusters,
-        file_pattern=args.file_pattern,
-    )
+    if args.db_url:
+        from database_utils import read_table, write_dataframe
+        temp_dir = Path(args.output_dir)
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        df_db = read_table(args.db_table, db_url=args.db_url)
+        temp_csv = temp_dir / "db_input.csv"
+        df_db.to_csv(temp_csv, index=False)
+        df_clustered = main_clustering_pipeline(
+            input_file=str(temp_csv),
+            output_dir=args.output_dir,
+            n_clusters=args.n_clusters,
+        )
+        write_dataframe(df_clustered, args.db_table, db_url=args.db_url, if_exists="replace")
+    else:
+        summary = multi_year_clustering(
+            input_dir=args.input_dir,
+            output_dir=args.output_dir,
+            n_clusters=args.n_clusters,
+            file_pattern=args.file_pattern,
+        )
 
-    if summary is not None:
-        summarize_and_plot_multi_year_clusters(summary, output_dir=args.output_dir)
+        if summary is not None:
+            summarize_and_plot_multi_year_clusters(summary, output_dir=args.output_dir)

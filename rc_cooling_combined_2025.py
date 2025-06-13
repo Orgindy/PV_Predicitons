@@ -740,10 +740,15 @@ def plot_qnet_map(grid_lon: np.ndarray,
 ##############################################################################
 #                             6. MAIN EXECUTION
 ##############################################################################
-def main():
+def main(db_url=None, db_table="rc_data"):
     try:
-        logging.info("Loading and processing CSV data for RC cooling potential...")
-        data = load_and_process_csv_files(DATA_FOLDER, grib_path=GRIB_PATH)
+        if db_url:
+            from database_utils import read_table, write_dataframe
+            logging.info(f"Loading data from table {db_table}")
+            data = read_table(db_table, db_url=db_url)
+        else:
+            logging.info("Loading and processing CSV data for RC cooling potential...")
+            data = load_and_process_csv_files(DATA_FOLDER, grib_path=GRIB_PATH)
         
         logging.info("Preprocessing annual data (aggregating by LAT, LON, year)...")
         annual_df = preprocess_data(data)
@@ -767,10 +772,17 @@ def main():
         plot_qnet_map(grid_lon, grid_lat, z_pred, save_path=None)
         
         logging.info("RC cooling model execution completed successfully.")
+        if db_url:
+            write_dataframe(annual_df, db_table, db_url=db_url, if_exists="replace")
         
     except Exception as e:
         logging.error("An error occurred during execution.", exc_info=True)
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description="Run RC cooling model")
+    parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
+    parser.add_argument("--db-table", default="rc_data")
+    args = parser.parse_args()
+    main(db_url=args.db_url, db_table=args.db_table)
 
