@@ -326,10 +326,10 @@ def load_and_merge_rc_netcdf_years(folder_path, var_name='QNET', time_dim='time'
     datasets = []
     for file in files:
         print(f"📥 Loading {file}")
-        ds = xr.open_dataset(file)
-        if var_name not in ds:
-            raise ValueError(f"Variable '{var_name}' not found in {file}")
-        datasets.append(ds)
+        with xr.open_dataset(file) as ds:
+            if var_name not in ds:
+                raise ValueError(f"Variable '{var_name}' not found in {file}")
+            datasets.append(ds.load())  # Load data into memory, then close file
 
     ds_merged = xr.concat(datasets, dim=time_dim)
     print(f"✅ Merged {len(datasets)} NetCDF files into one dataset")
