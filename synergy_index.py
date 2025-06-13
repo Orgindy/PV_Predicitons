@@ -133,7 +133,8 @@ def calculate_synergy_metrics_summary(df, group_by_cols=None):
         group_by_cols (list): Columns to group by (e.g., ['Cluster_ID', 'season'])
     
     Returns:
-        pd.DataFrame: Summary statistics
+        pd.DataFrame: Summary statistics. When ``group_by_cols`` is ``None`` a
+        single-row DataFrame with the descriptive statistics is returned.
     """
     if 'Synergy_Index' not in df.columns:
         raise ValueError("DataFrame must contain 'Synergy_Index' column")
@@ -143,7 +144,7 @@ def calculate_synergy_metrics_summary(df, group_by_cols=None):
             'count', 'mean', 'median', 'std', 'min', 'max'
         ]).round(3)
     else:
-        summary = df['Synergy_Index'].describe()
+        summary = df['Synergy_Index'].describe().to_frame().T
     
     return summary
 
