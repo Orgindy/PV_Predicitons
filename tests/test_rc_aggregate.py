@@ -17,9 +17,14 @@ def import_module_with_stubs():
         'geopandas': types.ModuleType('geopandas'),
         'sklearn_extra': types.ModuleType('sklearn_extra'),
         'sklearn_extra.cluster': types.ModuleType('sklearn_extra.cluster'),
+        'sklearn': types.ModuleType('sklearn'),
+        'sklearn.model_selection': types.ModuleType('sklearn.model_selection'),
+        'sklearn.preprocessing': types.ModuleType('sklearn.preprocessing'),
     }
     modules_to_stub['pykrige.ok'].OrdinaryKriging = object
     modules_to_stub['sklearn_extra.cluster'].KMedoids = object
+    modules_to_stub['sklearn.model_selection'].train_test_split = lambda *a, **k: ([], [])
+    modules_to_stub['sklearn.preprocessing'].StandardScaler = object
 
     for name, module in modules_to_stub.items():
         sys.modules.setdefault(name, module)
