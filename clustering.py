@@ -28,28 +28,35 @@ except ImportError:
         return np.clip(RH, 0, 100)
         
 def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
-                               output_path="data/clustered_dataset_rh_albedo.csv"):
+                               output_path="data/clustered_dataset_rh_albedo.csv",
+                               db_url=None,
+                               db_table=None):
     """
     Load dataset, recompute RH if needed, apply clustering, and save enhanced file.
     """
-    print(f"📥 Loading dataset from {input_path}")
-    
-    # Check if file exists, try alternatives
-    if not os.path.exists(input_path):
-        alternative_paths = ["clustered_dataset.csv", "data/clustered_dataset.csv", "merged_dataset.csv"]
-        input_path = None
-        for alt_path in alternative_paths:
-            if os.path.exists(alt_path):
-                input_path = alt_path
-                print(f"📥 Using alternative input: {input_path}")
-                break
-        
-        if input_path is None:
-            print(f"❌ No input file found. Tried: {alternative_paths}")
-            return None
-    
-    df = pd.read_csv(input_path)
-    print(f"📊 Loaded {len(df)} rows with columns: {list(df.columns)}")
+    if db_url:
+        from database_utils import read_table
+        df = read_table(db_table, db_url=db_url)
+        print(f"📥 Loaded {len(df)} rows from table {db_table}")
+    else:
+        print(f"📥 Loading dataset from {input_path}")
+
+        # Check if file exists, try alternatives
+        if not os.path.exists(input_path):
+            alternative_paths = ["clustered_dataset.csv", "data/clustered_dataset.csv", "merged_dataset.csv"]
+            input_path = None
+            for alt_path in alternative_paths:
+                if os.path.exists(alt_path):
+                    input_path = alt_path
+                    print(f"📥 Using alternative input: {input_path}")
+                    break
+
+            if input_path is None:
+                print(f"❌ No input file found. Tried: {alternative_paths}")
+                return None
+
+        df = pd.read_csv(input_path)
+        print(f"📊 Loaded {len(df)} rows with columns: {list(df.columns)}")
 
     # Add albedo if available from GRIB data
     if "fal" in df.columns and "Albedo" not in df.columns:
@@ -130,6 +137,10 @@ def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
     # Save enhanced dataset
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df.to_csv(output_path, index=False)
+    if db_url:
+        from database_utils import write_dataframe
+        write_dataframe(df, db_table, db_url=db_url, if_exists="replace")
+        print(f"✅ Saved enhanced dataset to table {db_table}")
     print(f"✅ Saved enhanced dataset to {output_path}")
     return df
 
@@ -776,7 +787,9 @@ def main_matching_pipeline(
     clustered_data_path='data/clustered_dataset_rh_albedo.csv',
     shapefile_path='data/borders/ne_10m_admin_0_countries.shp',
     output_file='matched_dataset.csv',
-    k_range=range(2, 10)
+    k_range=range(2, 10),
+    db_url=None,
+    db_table=None,
 ):
     """
     Full pipeline to assign best PV technology per location based on clustering + spectral analysis.
@@ -791,14 +804,18 @@ def main_matching_pipeline(
 
     # Step 1: Prepare dataset
     print("\n=== Step 1: Preparing Input Dataset ===")
-    df = prepare_clustered_dataset()
+    df = prepare_clustered_dataset(db_url=db_url, db_table=db_table)
     if df is None:
         print("❌ Failed to prepare dataset")
         return None
 
     # --- Load it ---
     print("\n=== Loading Input Dataset ===")
-    df = pd.read_csv(clustered_data_path)
+    if db_url:
+        from database_utils import read_table
+        df = read_table(db_table, db_url=db_url)
+    else:
+        df = pd.read_csv(clustered_data_path)
 
     print("\n=== Preparing Features for Clustering ===")
     X_scaled, features, scaler = prepare_features_for_clustering(df)
@@ -829,6 +846,9 @@ def main_matching_pipeline(
     
 
     df_final.to_csv(output_file, index=False)
+    if db_url:
+        from database_utils import write_dataframe
+        write_dataframe(df_final, db_table, db_url=db_url, if_exists="replace")
     print(f"✅ Technology-matched dataset saved to {output_file}")
     # Compute adjusted yield for all PV techs at each location
     adjusted_yield_df = compute_adjusted_yield_by_technology(df_final, pv_profiles)
@@ -850,4 +870,16 @@ def main_matching_pipeline(
     return df_final
 
 if __name__ == "__main__":
-    main_matching_pipeline()
+    import argparse
+    parser = argparse.ArgumentParser(description="Run PV technology matching pipeline")
+    parser.add_argument("--input-file", default="data/clustered_dataset_rh_albedo.csv")
+    parser.add_argument("--output-file", default="matched_dataset.csv")
+    parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
+    parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"))
+    args = parser.parse_args()
+    main_matching_pipeline(
+        clustered_data_path=args.input_file,
+        output_file=args.output_file,
+        db_url=args.db_url,
+        db_table=args.db_table,
+    )

@@ -19,10 +19,14 @@ def parse_args():
         default="matched_dataset.csv",
         help="Path to matched dataset CSV",
     )
+    parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
+    parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"))
     return parser.parse_args()
 
 ARGS = parse_args()
 DATA_PATH = ARGS.data_path
+DB_URL = ARGS.db_url
+DB_TABLE = ARGS.db_table
 
 def compute_temperature_series(ghi, tair, ir_down, wind, zenith, material_config, 
                              switching_profile, emissivity_profile, alpha_profile):
@@ -199,7 +203,7 @@ with st.expander("ℹ️ How this tool works"):
     """)
     
 @st.cache_data
-def load_cluster_dataset(csv_path=DATA_PATH):
+def load_cluster_dataset(csv_path=DATA_PATH, db_url=DB_URL, db_table=DB_TABLE):
     """
     Load cluster dataset with comprehensive error handling and column detection.
     
@@ -208,7 +212,11 @@ def load_cluster_dataset(csv_path=DATA_PATH):
     - tree: cKDTree for fast spatial queries
     """
     try:
-        df = pd.read_csv(csv_path)
+        if db_url:
+            from database_utils import read_table
+            df = read_table(db_table, db_url=db_url)
+        else:
+            df = pd.read_csv(csv_path)
         st.success(f"✅ Dataset loaded: {len(df)} locations")
         
         # Flexible column detection
@@ -394,7 +402,7 @@ with col1:
     data_loading_status = st.empty()
     with data_loading_status:
         with st.spinner("Loading dataset..."):
-            df, tree = load_cluster_dataset()
+            df, tree = load_cluster_dataset(db_url=DB_URL, db_table=DB_TABLE)
     
     if df is not None and tree is not None:
         data_loading_status.empty()

@@ -1647,8 +1647,10 @@ def main():
     parser.add_argument('--max-workers', type=int, help='Maximum number of worker processes')
     parser.add_argument('--debug', action='store_true', help='Enable debug logging')
     parser.add_argument('--test', action='store_true', help='Run unit tests')
-    parser.add_argument('--dry-run', action='store_true', 
+    parser.add_argument('--dry-run', action='store_true',
                         help='Validate inputs without generating files')
+    parser.add_argument('--db-url', help='Database URL for location table')
+    parser.add_argument('--db-table', default='locations', help='Table name for locations')
     
     args = parser.parse_args()
    
@@ -1787,6 +1789,18 @@ def main():
             logger.info(f"Loaded {len(locations)} locations from CSV")
         except Exception as e:
             logger.error(f"Error loading locations from CSV: {e}")
+            return 1
+    elif args.db_url:
+        from database_utils import read_table
+        try:
+            locations_df = read_table(args.db_table, db_url=args.db_url)
+            locations = [
+                [row['name'], row['lat'], row['lon'], row.get('elevation'), row.get('land_cover', 'LIGHT_SOIL')]
+                for _, row in locations_df.iterrows()
+            ]
+            logger.info(f"Loaded {len(locations)} locations from table {args.db_table}")
+        except Exception as e:
+            logger.error(f"Error loading locations from DB: {e}")
             return 1
     else:
         try:

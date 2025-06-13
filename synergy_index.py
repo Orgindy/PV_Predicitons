@@ -64,6 +64,46 @@ def calculate_synergy_index(
     return synergy_index
 
 
+def add_synergy_index(df, gamma_pv=-0.004, rc_energy_col=None):
+    """Return DataFrame with a new ``Synergy_Index`` column.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input data containing ``T_PV``, ``T_RC`` and ``GHI`` columns.
+    gamma_pv : float, optional
+        PV temperature coefficient. Default ``-0.004``.
+    rc_energy_col : str, optional
+        Name of a column with additional RC cooling energy.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copy of ``df`` with the new column appended.
+    """
+    required_cols = ["T_PV", "T_RC", "GHI"]
+    missing_cols = [c for c in required_cols if c not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Missing required columns: {missing_cols}")
+
+    df = df.copy()
+    delta_T = df["T_PV"] - df["T_RC"]
+    delta_P = abs(gamma_pv) * delta_T * df["GHI"]
+
+    if rc_energy_col and rc_energy_col in df.columns:
+        rc_energy = df[rc_energy_col]
+    else:
+        rc_energy = 0
+
+    synergy_benefit = delta_P + rc_energy
+    df["Synergy_Index"] = np.where(
+        df["GHI"] > 0,
+        (synergy_benefit / df["GHI"]) * 100,
+        0,
+    )
+    return df
+
+
 def add_synergy_index_to_dataset_vectorized(csv_path, output_path=None, gamma_pv=-0.004, rc_energy_col=None):
     """
     Load a dataset, compute synergy index for each row using vectorized operations, and save updated CSV.
@@ -79,36 +119,7 @@ def add_synergy_index_to_dataset_vectorized(csv_path, output_path=None, gamma_pv
     """
     print(f"📥 Loading dataset from {csv_path}")
     df = pd.read_csv(csv_path)
-
-    required_cols = ["T_PV", "T_RC", "GHI"]
-    missing_cols = [col for col in required_cols if col not in df.columns]
-    
-    if missing_cols:
-        raise ValueError(f"Missing required columns: {missing_cols}")
-
-    print("🧮 Computing synergy index using vectorized operations...")
-    
-    # Vectorized calculation - much faster than row-by-row
-    delta_T = df["T_PV"] - df["T_RC"]  # Temperature reduction benefit
-    # Use absolute value so a negative PV temperature coefficient results in a
-    # positive power gain when cooling lowers the cell temperature.
-    delta_P = abs(gamma_pv) * delta_T * df["GHI"]  # PV power gain
-    
-    # Add RC cooling energy if available
-    if rc_energy_col and rc_energy_col in df.columns:
-        rc_energy = df[rc_energy_col]
-    else:
-        rc_energy = 0
-    
-    # Total synergy benefit
-    synergy_benefit = delta_P + rc_energy
-    
-    # Normalize by GHI (simple approach - can be customized)
-    synergy_index = np.where(df["GHI"] > 0, 
-                            (synergy_benefit / df["GHI"]) * 100, 
-                            0)
-    
-    df["Synergy_Index"] = synergy_index
+    df = add_synergy_index(df, gamma_pv=gamma_pv, rc_energy_col=rc_energy_col)
 
     if output_path is None:
         output_path = csv_path
@@ -149,18 +160,21 @@ def calculate_synergy_metrics_summary(df, group_by_cols=None):
 
 
 if __name__ == "__main__":
-    # Example usage - only runs when script is executed directly
-    try:
-        # Test with a sample dataset
-        result_df = add_synergy_index_to_dataset_vectorized("clustered_dataset.csv")
-        print(f"📊 Processed {len(result_df)} rows")
-        
-        # Show summary statistics
-        summary = calculate_synergy_metrics_summary(result_df)
-        print("\n📈 Synergy Index Summary:")
-        print(summary)
-        
-    except FileNotFoundError:
-        print("⚠️ clustered_dataset.csv not found - skipping example")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    import argparse
+    from database_utils import read_table, write_dataframe
+
+    parser = argparse.ArgumentParser(description="Add Synergy_Index to a dataset")
+    parser.add_argument("--input", default="clustered_dataset.csv", help="Input CSV path")
+    parser.add_argument("--output", default="clustered_dataset_synergy.csv", help="Output CSV path")
+    parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"), help="Database URL")
+    parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"), help="Table name for DB operations")
+    args = parser.parse_args()
+
+    if args.db_url:
+        df = read_table(args.db_table, db_url=args.db_url)
+        df = add_synergy_index(df)
+        write_dataframe(df, args.db_table, db_url=args.db_url, if_exists="replace")
+        df.to_csv(args.output, index=False)
+        print(f"✅ Results written to DB table {args.db_table}")
+    else:
+        add_synergy_index_to_dataset_vectorized(args.input, args.output)

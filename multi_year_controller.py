@@ -9,6 +9,8 @@ def multi_year_matching_pipeline(
     output_dir,
     borders_path,
     k_range=range(2, 10),
+    db_url=None,
+    db_table=None,
 ):
     """Run ``main_matching_pipeline`` across multiple yearly cluster files.
 
@@ -43,6 +45,23 @@ def multi_year_matching_pipeline(
         print(f"\n=== Processing {year} ===")
         print(f"Input: {input_file}")
         print(f"Output: {output_file}")
+
+        if db_url:
+            from database_utils import read_table, write_dataframe
+            df = read_table(db_table, db_url=db_url)
+            df = main_matching_pipeline(
+                clustered_data_path=input_file,
+                shapefile_path=borders_path,
+                output_file=output_file,
+                k_range=k_range,
+                db_url=db_url,
+                db_table=db_table,
+            )
+            if df is not None:
+                df["Year"] = year
+                write_dataframe(df, db_table, db_url=db_url, if_exists="replace")
+                results.append(df)
+            continue
 
         if not os.path.exists(input_file):
             print(f"❌ Input file not found for {year}")
@@ -83,6 +102,8 @@ if __name__ == "__main__":
     parser.add_argument("--base-input", default="results/clusters/")
     parser.add_argument("--output-dir", default="results/matching/")
     parser.add_argument("--borders-path", default="data/borders/ne_10m_admin_0_countries.shp")
+    parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
+    parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"))
     args = parser.parse_args()
 
     multi_year_matching_pipeline(
@@ -90,4 +111,6 @@ if __name__ == "__main__":
         args.base_input,
         args.output_dir,
         args.borders_path,
+        db_url=args.db_url,
+        db_table=args.db_table,
     )
