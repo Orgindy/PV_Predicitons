@@ -446,10 +446,16 @@ def aggregate_rc_metrics(kriged_file, output_file, cluster_col='Cluster_ID'):
     metrics_df.columns = [f"{col[0]}_{col[1]}" if col[1] else col[0] for col in metrics_df.columns]
     
     # Add cluster ID as a standalone column
-    metrics_df.columns = ['Cluster_ID', 'RC_mean', 'RC_median', 'RC_std', 'RC_min', 'RC_max', 'RC_sum', 'RC_count']
-    drop_col = f"{cluster_col}_"
-    if drop_col in metrics_df.columns:
-        metrics_df.drop(columns=[drop_col], inplace=True)
+    metrics_df.columns = [
+        'Cluster_ID',
+        'RC_mean',
+        'RC_median',
+        'RC_std',
+        'RC_min',
+        'RC_max',
+        'RC_sum',
+        'RC_count',
+    ]
     
     # Save the aggregated metrics
     metrics_df.to_csv(output_file, index=False)
