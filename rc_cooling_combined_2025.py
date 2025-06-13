@@ -7,6 +7,7 @@ import logging
 from typing import Tuple
 from sklearn.model_selection import train_test_split
 from pykrige.ok import OrdinaryKriging
+from config import get_nc_dir
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -306,7 +307,7 @@ def add_cluster_labels(rc_file, cluster_file, output_file, lat_col='latitude', l
     final_df.to_csv(output_file, index=False)
     print(f"✅ Cluster labels added and saved to {output_file}")
 
-def load_and_merge_rc_netcdf_years(folder_path, var_name='QNET', time_dim='time'):
+def load_and_merge_rc_netcdf_years(folder_path=None, var_name='QNET', time_dim='time'):
     """
     Load and merge multiple yearly RC NetCDF files into a single xarray.Dataset.
 
@@ -319,6 +320,11 @@ def load_and_merge_rc_netcdf_years(folder_path, var_name='QNET', time_dim='time'
     - ds_merged: combined xarray.Dataset with stacked time
     """
     import glob
+    if folder_path is None:
+        folder_path = get_nc_dir()
+    elif not os.path.isabs(folder_path):
+        folder_path = os.path.join(get_nc_dir(), folder_path)
+
     files = sorted(glob.glob(os.path.join(folder_path, "*.nc")))
     if not files:
         raise FileNotFoundError(f"No NetCDF files found in {folder_path}")
@@ -335,13 +341,14 @@ def load_and_merge_rc_netcdf_years(folder_path, var_name='QNET', time_dim='time'
     print(f"✅ Merged {len(datasets)} NetCDF files into one dataset")
     return ds_merged
 
-def multi_year_kriging(rc_folder, output_file, cluster_file=None, lat_col='latitude', lon_col='longitude'):
+def multi_year_kriging(rc_folder=None, output_file=None, cluster_file=None, lat_col='latitude', lon_col='longitude'):
     """
     Performs multi-year kriging to generate high-resolution RC maps.
     
     Parameters:
-    - rc_folder (str): Directory containing yearly RC CSV files.
-    - output_file (str): Path to the final merged output file.
+    - rc_folder (str or None): Directory containing yearly RC NetCDF files. If
+      None, uses ``get_nc_dir()``.
+    - output_file (str or None): Path to the final merged output file.
     - cluster_file (str): Optional path to cluster file for spatial weighting.
     - lat_col (str): Name of the latitude column.
     - lon_col (str): Name of the longitude column.

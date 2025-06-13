@@ -18,6 +18,7 @@ Date: May 2025
 import os
 import argparse
 import logging
+from config import get_nc_dir
 import gc
 import sys  # Add this import
 from datetime import datetime
@@ -1304,8 +1305,8 @@ def parse_arguments():
         description='Process ERA5 data: load, calculate derived variables, aggregate, and save.'
     )
     
-    parser.add_argument('--input', required=True, help='Path to ERA5 NetCDF file')
-    parser.add_argument('--output', required=True, help='Directory to save output files')
+    parser.add_argument('--input', help='Path to ERA5 NetCDF file')
+    parser.add_argument('--output', help='Directory to save output files')
     
     parser.add_argument('--lat-min', type=float, help='Minimum latitude')
     parser.add_argument('--lat-max', type=float, help='Maximum latitude')
@@ -1324,10 +1325,11 @@ def main():
     """Main entry point with hardcoded file paths."""
     # Record start time
     start_time = time.time()
-    
-    # HARDCODED PATHS - MODIFY THESE TO YOUR ACTUAL FILE LOCATIONS
-    input_file = os.getenv("ERA5_INPUT_FILE", "era5_2023_merged.nc")
-    output_dir = os.getenv("ERA5_OUTPUT_DIR", "processed_era5")
+    args = parse_arguments()
+
+    # Default locations use the shared NetCDF directory unless CLI overrides
+    input_file = args.input or os.path.join(get_nc_dir(), "era5_2023_merged.nc")
+    output_dir = args.output or os.path.join(get_nc_dir(), "processed_era5")
     
     # Optional: Hardcode spatial subset if needed
     spatial_subset = None

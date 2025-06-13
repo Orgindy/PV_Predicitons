@@ -20,6 +20,20 @@ pip install -r requirements.txt
 bash scripts/setup_env.sh
 ```
 
+## NetCDF data directory
+
+Many scripts read NetCDF files from a shared location. Set the directory
+via the `NC_DATA_DIR` environment variable or create a `config.yaml` file
+with a key `nc_data_dir`. An example file is provided:
+
+```bash
+cp config.yaml.example config.yaml
+echo "nc_data_dir: /path/to/my/netcdf" > config.yaml
+```
+
+The environment variable takes precedence. Individual scripts still
+allow `--netcdf-file` arguments to override this location for a single run.
+
 ## Running Tests
 Unit tests use `pytest`. Install the dependencies first (for example by running
 `bash scripts/setup_env.sh` as shown above), then execute:
@@ -78,7 +92,8 @@ python "Feature Preparation.py" \
   --input-file data/merged_dataset.csv \
   --validated-file data/validated_dataset.csv \
   --physics-file data/physics_dataset.csv \
-  --netcdf-file data/processed_era5/ERA5_daily.nc \
+  # Optional: override the NetCDF directory
+  --netcdf-file my_dataset.nc \
   --results-dir results
 ```
 
