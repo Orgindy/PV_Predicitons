@@ -244,10 +244,9 @@ def load_netcdf_data(netcdf_file, sample_fraction=0.1):
     print(f"Loading NetCDF data from {netcdf_file}...")
     
     # Load dataset
-    ds = xr.open_dataset(netcdf_file)
-    
-    # Convert to DataFrame (this flattens all dimensions)
-    df = ds.to_dataframe().reset_index()
+    with xr.open_dataset(netcdf_file) as ds:
+        # Convert to DataFrame (this flattens all dimensions)
+        df = ds.load().to_dataframe().reset_index()
     
     # Remove rows with all NaN values
     df = df.dropna(how='all')
