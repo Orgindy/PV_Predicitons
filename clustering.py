@@ -12,6 +12,9 @@ from matplotlib import ticker
 import matplotlib.pyplot as plt
 
 from shapely.geometry import Point
+import rasterio
+from rasterio.plot import show as rio_show
+from pyproj import Transformer
 # Import humidity function
 try:
     from utils.humidity import compute_relative_humidity
@@ -783,6 +786,56 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
     plt.close()
     print(f"🖼️ Saved prediction uncertainty map to: {output_path}")
 
+
+def add_koppen_geiger(df, kg_raster='DATASET/kg_classification.tif', lat_col='latitude', lon_col='longitude'):
+    """Attach Köppen–Geiger climate classification to each row."""
+    df_out = df.copy()
+    if not os.path.exists(kg_raster):
+        print(f"⚠️ KG raster not found at {kg_raster}")
+        df_out['KG_Code'] = np.nan
+        df_out['KG_Label'] = np.nan
+        return df_out
+
+    coords = list(zip(df_out[lon_col], df_out[lat_col]))
+    with rasterio.open(kg_raster) as src:
+        if src.crs and src.crs.to_string() != 'EPSG:4326':
+            transformer = Transformer.from_crs('EPSG:4326', src.crs, always_xy=True)
+            coords = [transformer.transform(x, y) for x, y in coords]
+        values = [val[0] if val.size > 0 else np.nan for val in src.sample(coords)]
+
+    df_out['KG_Code'] = values
+
+    kg_lookup = {
+        1: 'Af', 2: 'Am', 3: 'Aw', 4: 'BWh', 5: 'BWk', 6: 'BSh', 7: 'BSk',
+        8: 'Csa', 9: 'Csb', 10: 'Csc', 11: 'Cwa', 12: 'Cwb', 13: 'Cwc',
+        14: 'Cfa', 15: 'Cfb', 16: 'Cfc', 17: 'Dsa', 18: 'Dsb', 19: 'Dsc',
+        20: 'Dsd', 21: 'Dwa', 22: 'Dwb', 23: 'Dwc', 24: 'Dwd', 25: 'Dfa',
+        26: 'Dfb', 27: 'Dfc', 28: 'Dfd', 29: 'ET', 30: 'EF'
+    }
+    df_out['KG_Label'] = df_out['KG_Code'].map(kg_lookup)
+    return df_out
+
+
+def plot_clusters_with_kg(df, kg_raster='DATASET/kg_classification.tif', lat_col='latitude', lon_col='longitude',
+                          cluster_col='Cluster_ID', output_path='figures/cluster_map_with_kg.png'):
+    """Overlay cluster IDs with Köppen–Geiger zones on a map."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    if not os.path.exists(kg_raster):
+        print(f"⚠️ KG raster not found at {kg_raster}")
+        return
+    with rasterio.open(kg_raster) as src:
+        fig, ax = plt.subplots(figsize=(12, 8))
+        rio_show(src, ax=ax, cmap='terrain', alpha=0.4)
+        gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[lon_col], df[lat_col]), crs='EPSG:4326')
+        gdf = gdf.to_crs(src.crs)
+        gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=30, edgecolor='black')
+        ax.set_title('Clusters with Köppen–Geiger Zones')
+        ax.set_axis_off()
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=300)
+        plt.close()
+        print(f"✅ Saved map with KG overlay to {output_path}")
+
 def main_matching_pipeline(
     clustered_data_path='data/clustered_dataset_rh_albedo.csv',
     shapefile_path='data/borders/ne_10m_admin_0_countries.shp',
@@ -867,6 +920,16 @@ def main_matching_pipeline(
     
     compute_cluster_summary(df_final)
     compute_pv_potential_by_cluster_year(df_final)
+
+    # --- Köppen–Geiger integration ---
+    try:
+        df_with_kg = add_koppen_geiger(df_final)
+        df_with_kg.to_csv('clustered_dataset_with_kg.csv', index=False)
+        plot_clusters_with_kg(df_with_kg, output_path='figures/cluster_map_with_kg.png')
+        print('✅ Köppen–Geiger enrichment complete')
+    except Exception as e:
+        print(f'⚠️ KG enrichment failed: {e}')
+
     return df_final
 
 if __name__ == "__main__":
