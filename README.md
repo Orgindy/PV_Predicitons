@@ -8,6 +8,27 @@ This repository contains a collection of scripts to process climate data and eva
 - Thermal modeling utilities
 - Streamlit dashboard (`app.py`)
 
+## System-Level Prerequisites
+
+Some helper libraries must be available before Python packages are installed.
+Install the development headers for GDAL, GEOS, PROJ and ecCodes.
+
+On Ubuntu:
+
+```bash
+sudo apt-get update
+sudo apt-get install libgdal-dev libgeos-dev libproj-dev libeccodes-dev
+```
+
+On macOS:
+
+```bash
+brew install gdal geos proj eccodes
+```
+
+Install these packages **before** running `scripts/setup_env.sh` to set up the
+Python environment.
+
 ## Requirements
 Install dependencies from `requirements.txt` before running any of the scripts or tests.
 You can do this manually or via the helper script in `scripts/setup_env.sh`:
