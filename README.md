@@ -112,6 +112,12 @@ python run_smarts_batch.py \
 streamlit run app.py -- --data-path matched_dataset.csv
 ```
 
+The dashboard can also load data directly from a database:
+
+```bash
+streamlit run app.py -- --db-url sqlite:///pv.sqlite --db-table pv_results
+```
+
 ### Multi-Year PV Technology Matching
 
 Run the clustering and technology matching pipeline for several yearly datasets.
@@ -121,5 +127,15 @@ file.
 
 ```bash
 python multi_year_controller.py
+```
+
+Each CLI script that reads or writes CSVs supports database options. Examples:
+
+```bash
+python synergy_index.py --db-url sqlite:///pv.sqlite --db-table pv_data
+python clustering.py --db-url sqlite:///pv.sqlite --db-table clustered
+python "PV prediction.py" --db-url sqlite:///pv.sqlite --db-table pv_results
+python rc_climate_zoning.py --db-url sqlite:///pv.sqlite --db-table zones
+python multi_year_controller.py --db-url sqlite:///pv.sqlite --db-table results
 ```
 

@@ -148,7 +148,9 @@ def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology'
 def run_rc_zoning_pipeline(input_csv,
                            output_csv='results/rc_zones_described.csv',
                            overlay_map='results/maps/overlay_rc_pv_map.png',
-                           n_clusters=5):
+                           n_clusters=5,
+                           db_url=None,
+                           db_table=None):
     """
     Full pipeline to generate RC climate zones, zone descriptions,
     and overlay maps from a PV + RC dataset.
@@ -159,8 +161,13 @@ def run_rc_zoning_pipeline(input_csv,
     - overlay_map: Path to save the final map
     - n_clusters: Number of RC clusters to use
     """
-    print(f"📥 Loading: {input_csv}")
-    df = pd.read_csv(input_csv)
+    if db_url:
+        from database_utils import read_table, write_dataframe
+        print(f"📥 Loading table {db_table}")
+        df = read_table(db_table, db_url=db_url)
+    else:
+        print(f"📥 Loading: {input_csv}")
+        df = pd.read_csv(input_csv)
 
     # Calculate RC components
     print("⚙️ Calculating day vs. night RC power...")
@@ -208,6 +215,9 @@ def run_rc_zoning_pipeline(input_csv,
 
     # Save enriched CSV
     df.to_csv(output_csv, index=False)
+    if db_url:
+        write_dataframe(df, db_table, db_url=db_url, if_exists="replace")
+        print(f"💾 Output written to table {db_table}")
     print(f"💾 Output saved to: {output_csv}")
 
     # Overlay map
@@ -220,6 +230,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Run RC climate zoning pipeline")
     parser.add_argument("--input", default="input.csv", help="Path to input CSV")
+    parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
+    parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"))
     args = parser.parse_args()
-    run_rc_zoning_pipeline(args.input)
+    run_rc_zoning_pipeline(args.input, db_url=args.db_url, db_table=args.db_table)
 
