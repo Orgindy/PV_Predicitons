@@ -1,1 +1,3 @@
 nc_data_dir: /path/to/netcdf_files
+# Example for Windows users
+# nc_data_dir: C:\Users\gindi002\DATASET\Era5_GRIB_NEW_dataset_2023-2019_and_more_future
