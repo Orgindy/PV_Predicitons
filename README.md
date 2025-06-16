@@ -18,6 +18,9 @@ pip install -r requirements.txt
 
 # or use the setup script
 bash scripts/setup_env.sh
+
+# optional: verify all imports succeed
+python scripts/check_imports.py
 ```
 
 ## NetCDF data directory
@@ -29,6 +32,8 @@ with a key `nc_data_dir`. An example file is provided:
 ```bash
 cp config.yaml.example config.yaml
 echo "nc_data_dir: /path/to/my/netcdf" > config.yaml
+# Example for Windows users
+# echo "nc_data_dir: C:\Users\gindi002\DATASET\Era5_GRIB_NEW_dataset_2023-2019_and_more_future" > config.yaml
 ```
 
 The environment variable takes precedence. Individual scripts still
