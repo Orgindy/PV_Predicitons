@@ -182,9 +182,9 @@ def add_effective_albedo_optimized(chunk, grib_path):
             pattern = os.path.join(grib_path, f"*{time_val.year}{time_val.month:02d}*.grib")
             grib_files = glob.glob(pattern)
             if grib_files:
-                ds = xr.open_dataset(grib_files[0], engine='cfgrib')
-                if 'fal' in ds:
-                    albedo_cache[time_val] = ds['fal'].sel(time=time_val, method='nearest')
+                with xr.open_dataset(grib_files[0], engine='cfgrib') as ds:
+                    if 'fal' in ds:
+                        albedo_cache[time_val] = ds['fal'].sel(time=time_val, method='nearest').load()
         except Exception as e:
             logging.warning(f"Could not load GRIB for {time_val}: {e}")
             albedo_cache[time_val] = None
