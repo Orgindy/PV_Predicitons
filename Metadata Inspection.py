@@ -2,6 +2,7 @@ import os
 import xarray as xr
 import json
 from pprint import pprint
+from config import get_nc_dir
 
 def show_metadata(nc_path: str):
     """
@@ -49,10 +50,15 @@ def show_metadata(nc_path: str):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Inspect NetCDF metadata")
-    parser.add_argument("nc_file", help="Path to NetCDF file")
+    parser.add_argument("nc_file", nargs="?", default=os.path.join(get_nc_dir(), "ERA5_daily.nc"),
+                        help="Path to NetCDF file")
     args = parser.parse_args()
 
-    if not os.path.exists(args.nc_file):
-        print(f"❌ File not found: {args.nc_file}")
+    nc_file = args.nc_file
+    if not os.path.isabs(nc_file):
+        nc_file = os.path.join(get_nc_dir(), nc_file)
+
+    if not os.path.exists(nc_file):
+        print(f"❌ File not found: {nc_file}")
     else:
-        show_metadata(args.nc_file)
+        show_metadata(nc_file)

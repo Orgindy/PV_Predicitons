@@ -9,6 +9,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.feature_selection import mutual_info_regression
 import os
 import argparse
+from config import get_nc_dir
 
 
 def parse_args():
@@ -31,7 +32,7 @@ def parse_args():
     )
     parser.add_argument(
         "--netcdf-file",
-        default="data/processed_era5/ERA5_daily.nc",
+        default=os.path.join(get_nc_dir(), "ERA5_daily.nc"),
         help="Path to processed ERA5 NetCDF file",
     )
     parser.add_argument(

@@ -6,6 +6,7 @@ import shutil
 from tqdm import tqdm  # For progress bar
 import sys
 import cfgrib
+from config import get_nc_dir
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -13,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 # Hardcoded paths - CHANGE THESE TO YOUR ACTUAL PATHS
 GRIB_FOLDER = os.getenv("GRIB_FOLDER", "grib_files")  # Directory containing GRIB files
-NETCDF_OUTPUT_FOLDER = os.getenv("NETCDF_OUTPUT_FOLDER", "netcdf_files")  # Directory for individual NetCDF files
-MERGED_NETCDF_FILE = os.getenv("MERGED_NETCDF_FILE", "era5_2023_merged.nc")  # Path for final merged file
+NETCDF_OUTPUT_FOLDER = os.getenv("NETCDF_OUTPUT_FOLDER") or get_nc_dir()
+MERGED_NETCDF_FILE = os.path.join(get_nc_dir(), os.getenv("MERGED_NETCDF_FILE", "era5_2023_merged.nc"))
 TEMP_DIR = os.getenv("TEMP_DIR", "temp")  # Temporary directory for intermediate files
 
 # Configuration
