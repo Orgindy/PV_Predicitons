@@ -21,6 +21,8 @@ bash scripts/setup_env.sh
 
 # optional: verify all imports succeed
 python scripts/check_imports.py
+# or check every file individually
+python scripts/check_all_imports.py
 ```
 
 ## NetCDF data directory
