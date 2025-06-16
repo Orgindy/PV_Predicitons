@@ -10,8 +10,12 @@ from clustering import (
     main_matching_pipeline,
     plot_prediction_uncertainty_with_contours,
     compute_cluster_summary,
-    compute_pv_potential_by_cluster_year
+    compute_pv_potential_by_cluster_year,
+    prepare_features_for_clustering,
 )
+
+from sklearn.model_selection import train_test_split
+from train_models import train_all_models
 
 
 def parse_args():
@@ -73,7 +77,33 @@ def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
         logging.warning(f"Dataset preparation failed: {e}")
         logging.info("Continuing with original input file...")
         processed_path = input_path
-    
+
+    # Step 1b: Train ML models on prepared dataset
+    logging.info("🤖 Step 1b: Training prediction models")
+    try:
+        if 'PV_Potential_physics' in df_prepared.columns:
+            target_col = 'PV_Potential_physics'
+        elif 'PV_Potential' in df_prepared.columns:
+            target_col = 'PV_Potential'
+        else:
+            target_col = None
+
+        if target_col:
+            X_scaled, _, _ = prepare_features_for_clustering(df_prepared, use_predicted_pv=False)
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_scaled,
+                df_prepared[target_col].values,
+                test_size=0.2,
+                random_state=42,
+            )
+            _, perf = train_all_models(X_train, X_test, y_train, y_test)
+            pd.DataFrame(perf).T.to_csv('model_performance_summary.csv', index_label='Model')
+            logging.info("✅ Model training complete")
+        else:
+            logging.warning("No target column found for model training")
+    except Exception as e:
+        logging.warning(f"Model training failed: {e}")
+
     # Step 2: Run clustering and technology matching
     logging.info("🔗 Step 2: Running clustering & PV technology matching")
     try:
