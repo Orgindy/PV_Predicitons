@@ -39,3 +39,27 @@ def test_aggregate_rc_metrics_no_error(tmp_path):
     result = pd.read_csv(output_file)
     assert set(result.columns) >= {"Cluster_ID", "RC_mean"}
     assert len(result) == 2
+
+
+def test_aggregate_rc_metrics_columns(tmp_path):
+    df = pd.DataFrame({"Cluster_ID": [1, 1, 2, 2], "RC_Kriged": [5, 15, 25, 35]})
+    kriged_file = tmp_path / "kriged.csv"
+    df.to_csv(kriged_file, index=False)
+
+    output_file = tmp_path / "metrics.csv"
+    module = import_module_with_stubs()
+    module.aggregate_rc_metrics(str(kriged_file), str(output_file))
+
+    result = pd.read_csv(output_file)
+    expected = [
+        "Cluster_ID",
+        "RC_mean",
+        "RC_median",
+        "RC_std",
+        "RC_min",
+        "RC_max",
+        "RC_sum",
+        "RC_count",
+    ]
+    assert list(result.columns) == expected
+
