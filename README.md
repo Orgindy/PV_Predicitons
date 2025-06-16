@@ -34,6 +34,7 @@ cp config.yaml.example config.yaml
 echo "nc_data_dir: /path/to/my/netcdf" > config.yaml
 # Example for Windows users
 # echo "nc_data_dir: C:\Users\gindi002\DATASET\Era5_GRIB_NEW_dataset_2023-2019_and_more_future" > config.yaml
+# (This Windows path is also included as a comment in config.yaml.example.)
 ```
 
 The environment variable takes precedence. Individual scripts still
