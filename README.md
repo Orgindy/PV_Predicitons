@@ -31,9 +31,13 @@ Python environment.
 
 ## Requirements
 Install dependencies from `requirements.txt` before running any of the scripts or tests.
+The project is tested on **Python 3.11**.
 You can do this manually or via the helper script in `scripts/setup_env.sh`:
 
 ```bash
+# optional: create a virtual environment
+python3.11 -m venv venv && source venv/bin/activate
+
 # install packages manually
 pip install -r requirements.txt
 
