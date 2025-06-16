@@ -32,32 +32,31 @@ def validate_metadata(nc_file):
     - bool: True if the file passes validation, False otherwise.
     """
     try:
-        # Open the NetCDF file
-        ds = xr.open_dataset(nc_file)
-        
-        # Check for critical dimensions
-        required_dims = ["time", "latitude", "longitude"]
-        missing_dims = [dim for dim in required_dims if dim not in ds.dims]
-        
-        if missing_dims:
-            print(f"❌ Missing critical dimensions in {nc_file}: {missing_dims}")
-            return False
-        
-        # Check for required global attributes
-        required_attrs = ["Conventions", "title", "institution", "source"]
-        missing_attrs = [attr for attr in required_attrs if attr not in ds.attrs]
-        
-        if missing_attrs:
-            print(f"⚠️ Missing global attributes in {nc_file}: {missing_attrs}")
-            return False
-        
-        # Check for variable consistency
-        if not all(var in ds.data_vars for var in ["t2m", "sp", "u10", "v10"]):
-            print(f"⚠️ Missing expected data variables in {nc_file}")
-            return False
-        
-        print(f"✅ {nc_file} passed metadata validation.")
-        return True
+        # Open the NetCDF file within a context manager to ensure it closes
+        with xr.open_dataset(nc_file) as ds:
+            # Check for critical dimensions
+            required_dims = ["time", "latitude", "longitude"]
+            missing_dims = [dim for dim in required_dims if dim not in ds.dims]
+
+            if missing_dims:
+                print(f"❌ Missing critical dimensions in {nc_file}: {missing_dims}")
+                return False
+
+            # Check for required global attributes
+            required_attrs = ["Conventions", "title", "institution", "source"]
+            missing_attrs = [attr for attr in required_attrs if attr not in ds.attrs]
+
+            if missing_attrs:
+                print(f"⚠️ Missing global attributes in {nc_file}: {missing_attrs}")
+                return False
+
+            # Check for variable consistency
+            if not all(var in ds.data_vars for var in ["t2m", "sp", "u10", "v10"]):
+                print(f"⚠️ Missing expected data variables in {nc_file}")
+                return False
+
+            print(f"✅ {nc_file} passed metadata validation.")
+            return True
     
     except Exception as e:
         print(f"❌ Failed to validate {nc_file}: {e}")
