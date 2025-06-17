@@ -1,0 +1,3 @@
+GHI,T_air,RC_potential,Wind_Speed,Dew_Point,Blue_band,Green_band,Red_band,NIR_band,IR_band,Total_band
+800,25,50,5,10,100,120,140,160,180,600
+850,27,55,6,12,110,130,150,170,190,650
