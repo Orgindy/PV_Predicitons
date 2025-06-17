@@ -6,6 +6,8 @@ import xarray as xr
 import psutil
 
 # Helper to import Feature Preparation with stubs
+
+
 def import_feature_module():
     modules = {
         'matplotlib': types.ModuleType('matplotlib'),
@@ -27,12 +29,16 @@ def import_feature_module():
         sys.modules.setdefault(name, mod)
 
     import importlib.util
-    spec = importlib.util.spec_from_file_location('feature_preparation', str(Path(__file__).resolve().parents[1] / 'feature_preparation.py'))
+    spec = importlib.util.spec_from_file_location(
+        'feature_preparation',
+        str(Path(__file__).resolve().parents[1] / 'feature_preparation.py'),
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 # Helper to import rc_cooling_combined_2025 with stubs
+
 
 def import_rc_module():
     modules = {
@@ -83,12 +89,17 @@ def test_add_effective_albedo_context(monkeypatch, tmp_path):
 
     class DummyWrapper:
         def __init__(self):
-            arr = xr.DataArray([[[0.1]]], coords={'time': times, 'latitude': [0.0], 'longitude': [0.0]},
-                               dims=('time', 'latitude', 'longitude'))
+            arr = xr.DataArray(
+                [[[0.1]]],
+                coords={'time': times, 'latitude': [0.0], 'longitude': [0.0]},
+                dims=('time', 'latitude', 'longitude'),
+            )
             self.ds = xr.Dataset({'fal': arr})
             self.closed = False
+
         def __enter__(self):
             return self.ds
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             self.closed = True
 

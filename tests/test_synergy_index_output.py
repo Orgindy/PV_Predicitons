@@ -1,6 +1,7 @@
 import pandas as pd
 from synergy_index import add_synergy_index_to_dataset_vectorized
 
+
 def test_add_synergy_index_creates_directory(tmp_path):
     df = pd.DataFrame({"T_PV": [40], "T_RC": [30], "GHI": [1000]})
     input_path = tmp_path / "input.csv"

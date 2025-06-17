@@ -32,6 +32,7 @@ def import_module_with_stubs():
     import importlib
     return importlib.import_module('rc_cooling_combined_2025')
 
+
 def test_aggregate_rc_metrics_no_error(tmp_path):
     df = pd.DataFrame({"Cluster_ID": [1, 1, 2, 2], "RC_Kriged": [10, 20, 30, 40]})
     kriged_file = tmp_path / "kriged.csv"
@@ -67,4 +68,3 @@ def test_aggregate_rc_metrics_columns(tmp_path):
         "RC_count",
     ]
     assert list(result.columns) == expected
-
