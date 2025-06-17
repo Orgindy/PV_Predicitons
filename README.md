@@ -112,8 +112,6 @@ pip install -r requirements.txt
 pytest
 ```
 
-This repository also uses `flake8` for linting. The configuration lives in
-`.flake8` and sets `max-line-length = 127` among other defaults.
 
 ## Database Integration
 
