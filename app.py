@@ -29,7 +29,7 @@ DATA_PATH = ARGS.data_path
 DB_URL = ARGS.db_url
 DB_TABLE = ARGS.db_table
 
-def compute_temperature_series(ghi, tair, ir_down, wind, zenith, material_config, 
+def compute_temperature_series(ghi, tair, ir_down, wind, zenith, material_config,
                              switching_profile, emissivity_profile, alpha_profile):
     """
     Simplified thermal modeling for RC surface temperature.
@@ -37,7 +37,8 @@ def compute_temperature_series(ghi, tair, ir_down, wind, zenith, material_config
     Parameters:
     - ghi: Global Horizontal Irradiance (W/m²)
     - tair: Air temperature (K)
-    - ir_down: Downward IR radiation (W/m²)
+    - ir_down: Downward longwave radiation from the sky (W/m²). This is used to
+      estimate the effective sky temperature.
     - wind: Wind speed (m/s)
     - zenith: Solar zenith angle (degrees)
     - material_config: Dict with material properties
@@ -50,6 +51,7 @@ def compute_temperature_series(ghi, tair, ir_down, wind, zenith, material_config
     """
     ghi = np.array(ghi)
     tair = np.array(tair)
+    ir_down = np.array(ir_down)
     wind = np.array(wind)
     zenith = np.array(zenith)
     
@@ -71,7 +73,8 @@ def compute_temperature_series(ghi, tair, ir_down, wind, zenith, material_config
     
     # Radiative cooling to sky (simplified)
     sigma = 5.67e-8  # Stefan-Boltzmann constant
-    T_sky = tair - 15  # Approximate sky temperature (15K below air temp)
+    # Estimate effective sky temperature from downwelling IR
+    T_sky = (ir_down / (epsilon * sigma)) ** 0.25
     
     # Iterative solution for RC temperature
     T_rc = tair.copy()  # Initial guess
