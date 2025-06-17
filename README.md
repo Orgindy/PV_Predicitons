@@ -86,6 +86,22 @@ root or inside a `data/` directory.
 NetCDF files should reside under the directory configured with `NC_DATA_DIR` or
 `config.yaml`.
 
+### Quick start with sample data
+
+Minimal CSV examples are provided under `tests/data/` for experimentation. Copy
+them to the project root to run the scripts without downloading full datasets:
+
+```bash
+cp tests/data/sample_clustered_dataset.csv clustered_dataset.csv
+python synergy_index.py --input clustered_dataset.csv --output results/sample_synergy.csv
+
+cp tests/data/sample_merged_dataset.csv merged_dataset.csv
+python "Feature Preparation.py" --input-file merged_dataset.csv \
+    --validated-file validated_dataset.csv --physics-file physics_dataset.csv
+```
+
+These tiny files contain only a couple of rows so the commands complete very quickly.
+
 ## Running Tests
 Unit tests rely on the packages listed in `requirements.txt`. Make sure these
 dependencies are installed before executing the test suite. You can install
