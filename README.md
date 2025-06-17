@@ -94,6 +94,9 @@ Unit tests use `pytest`. Install the dependencies first (for example by running
 pytest -q
 ```
 
+This repository also uses `flake8` for linting. The configuration lives in
+`.flake8` and sets `max-line-length = 127` among other defaults.
+
 ## Database Integration
 
 Several scripts can read from or write to a SQL database using SQLAlchemy. Set
