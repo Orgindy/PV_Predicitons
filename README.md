@@ -87,11 +87,13 @@ NetCDF files should reside under the directory configured with `NC_DATA_DIR` or
 `config.yaml`.
 
 ## Running Tests
-Unit tests use `pytest`. Install the dependencies first (for example by running
-`bash scripts/setup_env.sh` as shown above), then execute:
+Unit tests rely on the packages listed in `requirements.txt`. Make sure these
+dependencies are installed before executing the test suite. You can install
+them manually or use the helper script in `scripts/setup_env.sh`:
 
 ```bash
-pytest -q
+pip install -r requirements.txt
+pytest
 ```
 
 This repository also uses `flake8` for linting. The configuration lives in
