@@ -11,6 +11,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, silhouette_score
 from sklearn_extra.cluster import KMedoids
+import logging
+
+logger = logging.getLogger(__name__)
 
 def add_land_mask(df, lat_col='latitude', lon_col='longitude', world_shapefile='naturalearth_lowres'):
     """
@@ -64,8 +67,8 @@ def overlay_technology_matches(geo_df, tech_col='Best_Technology', cluster_col='
     geo_df.plot(column=tech_col, ax=ax, legend=True, markersize=35, edgecolor='black', cmap='tab10')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
-        print("⚠️ Basemap could not be loaded — continuing without.")
+    except Exception as e:
+        logger.warning("Basemap could not be loaded: %s", e)
 
     ax.set_title(title, fontsize=14)
     ax.set_axis_off()
@@ -245,8 +248,8 @@ def predict_pv_potential(model, X_scaled, df_original):
     try:
         pred_std = np.std([tree.predict(X_scaled) for tree in model.estimators_], axis=0)
         df_result['Prediction_Uncertainty'] = pred_std
-    except:
-        pass
+    except Exception as e:
+        logger.warning("Could not compute prediction uncertainty: %s", e)
         
     return df_result
 
@@ -296,8 +299,8 @@ def plot_clusters_map(df, lat_col='latitude', lon_col='longitude', cluster_col='
     gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=35, edgecolor='k')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
-        print("Basemap could not be loaded.")
+    except Exception as e:
+        logger.warning("Basemap could not be loaded: %s", e)
     ax.set_title(title)
     ax.set_axis_off()
     plt.tight_layout()
@@ -330,8 +333,8 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
 
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
-        print("Basemap not loaded — offline mode.")
+    except Exception as e:
+        logger.warning("Basemap not loaded: %s", e)
 
     ax.set_title("Best Matched PV Technology by Location", fontsize=15)
     ax.set_axis_off()
@@ -421,8 +424,8 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
 
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
-        print("Basemap not loaded — offline mode.")
+    except Exception as e:
+        logger.warning("Basemap not loaded: %s", e)
 
     ax.set_title("Random Forest Prediction Uncertainty Map", fontsize=14)
     ax.set_axis_off()

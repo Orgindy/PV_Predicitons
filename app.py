@@ -10,6 +10,9 @@ import io
 import zipfile
 import warnings
 warnings.filterwarnings('ignore')
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def parse_args():
@@ -291,6 +294,7 @@ def load_cluster_dataset(csv_path=DATA_PATH, db_url=DB_URL, db_table=DB_TABLE):
         return None, None
         
     except Exception as e:
+        logger.error("Error loading dataset: %s", e)
         st.error(f"❌ Error loading dataset: {str(e)}")
         return None, None
 
@@ -825,15 +829,15 @@ Simulation Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
                         try:
                             map_img = fig_map.to_image(format="png", engine="kaleido")
                             zipf.writestr("recommended_zones_map.png", map_img)
-                        except:
-                            pass  # Skip if image export fails
+                        except Exception as e:
+                            logger.warning("Failed to export map image: %s", e)
                         
                         # Add temperature chart as PNG
                         try:
                             temp_img = fig_temp.to_image(format="png", engine="kaleido")
                             zipf.writestr("temperature_profiles.png", temp_img)
-                        except:
-                            pass  # Skip if image export fails
+                        except Exception as e:
+                            logger.warning("Failed to export temperature image: %s", e)
                     
                     zip_buffer.seek(0)
                     

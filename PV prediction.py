@@ -18,6 +18,9 @@ import joblib
 from datetime import datetime
 import os
 from xgboost import XGBRegressor
+import logging
+
+logger = logging.getLogger(__name__)
 from sklearn.gaussian_process.kernels import RBF
 
 # -----------------------------
@@ -282,7 +285,7 @@ def evaluate_cluster_quality(X_scaled, cluster_labels):
         return scores
 
     except Exception as e:
-        print(f"❌ Cluster evaluation failed: {e}")
+        logger.error("Cluster evaluation failed: %s", e)
         return {}
 
 
@@ -324,8 +327,8 @@ def plot_clusters_map(df, lat_col='latitude', lon_col='longitude', cluster_col='
     gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=35, edgecolor='k')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
-        print("Basemap could not be loaded.")
+    except Exception as e:
+        logger.warning("Basemap could not be loaded: %s", e)
     ax.set_title(title)
     ax.set_axis_off()
     plt.tight_layout()

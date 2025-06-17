@@ -4,6 +4,9 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import contextily as ctx
+import logging
+
+logger = logging.getLogger(__name__)
 def calculate_sky_temperature_improved(T_air, RH=50, cloud_cover=0):
     """
     Calculate sky temperature using proper atmospheric physics.
@@ -94,8 +97,8 @@ def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology'
 
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
-        print("⚠️ Basemap could not be loaded — offline mode.")
+    except Exception as e:
+        logger.warning("Basemap could not be loaded: %s", e)
 
     ax.set_title("Overlay of RC Climate Zones and Optimal PV Technologies", fontsize=14)
     ax.set_axis_off()

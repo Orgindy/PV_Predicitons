@@ -342,8 +342,8 @@ def identify_merge_dimension(netcdf_files, sample_size=3):
         try:
             for ds in sample_datasets:
                 ds.close()
-        except:
-            pass
+        except Exception as close_err:
+            logger.warning("Failed to close dataset: %s", close_err)
         return None
 
 def merge_netcdf_files_chunked(netcdf_files, output_file, merge_dim=None, chunk_size=None):
@@ -477,8 +477,8 @@ def merge_netcdf_files_chunked(netcdf_files, output_file, merge_dim=None, chunk_
             if os.path.exists(temp_file):
                 try:
                     os.remove(temp_file)
-                except:
-                    pass
+                except Exception as cleanup_err:
+                    logger.warning("Could not remove temp file %s: %s", temp_file, cleanup_err)
 
 def main():
     """Main function to process GRIB files and create merged NetCDF."""

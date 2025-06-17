@@ -98,3 +98,33 @@ def test_add_effective_albedo_context(monkeypatch, tmp_path):
     result = module.add_effective_albedo_optimized(df, str(grib_dir))
     assert wrapper.closed is True
     assert 'effective_albedo' in result.columns
+
+
+def test_add_effective_albedo_logs_interp_error(monkeypatch, tmp_path, caplog):
+    module = import_rc_module()
+    times = pd.date_range('2020-01-01', periods=1, freq='H')
+    df = pd.DataFrame({'time': times, 'LAT': [0.0], 'LON': [0.0]})
+    grib_dir = tmp_path / 'grib'
+    grib_dir.mkdir()
+    grib_file = grib_dir / f'test{times[0].year}{times[0].month:02d}.grib'
+    grib_file.write_text('')
+
+    arr = xr.DataArray([[[0.1]]], coords={'time': times, 'latitude': [0.0], 'longitude': [0.0]},
+                        dims=('time', 'latitude', 'longitude'))
+    def fail_interp(*a, **k):
+        raise ValueError('fail')
+    monkeypatch.setattr(xr.DataArray, 'interp', fail_interp, raising=False)
+
+    class DummyWrap:
+        def __init__(self):
+            self.ds = xr.Dataset({'fal': arr})
+        def __enter__(self):
+            return self.ds
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+
+    monkeypatch.setattr(module.xr, 'open_dataset', lambda *a, **k: DummyWrap())
+    caplog.set_level('WARNING')
+    result = module.add_effective_albedo_optimized(df, str(grib_dir))
+    assert 'Albedo interpolation failed' in caplog.text
+    assert result['effective_albedo'].iloc[0] == module.DEFAULT_RHO
