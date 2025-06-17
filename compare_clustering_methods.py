@@ -8,8 +8,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from clustering_methods import (run_agglomerative, run_dbscan, run_gmm,
-                                run_kmeans)
+from clustering_methods import run_agglomerative, run_dbscan, run_gmm, run_kmeans
 
 
 def load_and_scale_data(csv_path, feature_columns):

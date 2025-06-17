@@ -7,12 +7,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # Import pipeline functions from the clustering module
-from clustering import (compute_cluster_summary,
-                        compute_pv_potential_by_cluster_year,
-                        main_matching_pipeline,
-                        plot_prediction_uncertainty_with_contours,
-                        prepare_clustered_dataset,
-                        prepare_features_for_clustering)
+from clustering import (
+    compute_cluster_summary,
+    compute_pv_potential_by_cluster_year,
+    main_matching_pipeline,
+    plot_prediction_uncertainty_with_contours,
+    prepare_clustered_dataset,
+    prepare_features_for_clustering,
+)
 from train_models import train_all_models
 
 

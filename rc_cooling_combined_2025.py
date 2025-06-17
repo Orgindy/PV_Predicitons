@@ -831,7 +831,7 @@ def plot_rc_split_maps(
     """
 
     def plot_map(data_col, title, save_path):
-        fig = plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(12, 8))
         ax = plt.axes(projection=ccrs.PlateCarree())
 
         sc = ax.scatter(
@@ -879,7 +879,7 @@ def plot_qnet_map(
     Plot the kriged annual radiative cooling potential on a map.
     If save_path is provided, the plot is saved to that file.
     """
-    fig = plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(12, 8))
     ax = plt.axes(projection=ccrs.PlateCarree())
 
     cs = ax.pcolormesh(

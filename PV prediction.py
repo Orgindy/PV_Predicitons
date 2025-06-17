@@ -12,9 +12,14 @@ import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
-from sklearn.metrics import (calinski_harabasz_score, davies_bouldin_score,
-                             mean_absolute_error, mean_squared_error, r2_score,
-                             silhouette_score)
+from sklearn.metrics import (
+    calinski_harabasz_score,
+    davies_bouldin_score,
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
+    silhouette_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn_extra.cluster import KMedoids
