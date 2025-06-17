@@ -52,20 +52,30 @@ python scripts/check_all_imports.py
 
 ## NetCDF data directory
 
-Many scripts read NetCDF files from a shared location. Set the directory
-via the `NC_DATA_DIR` environment variable or create a `config.yaml` file
-with a key `nc_data_dir`. An example file is provided:
+Many scripts read NetCDF files from a shared location. Configure this location
+either in `config.yaml` or with the `NC_DATA_DIR` environment variable. Copy the
+template and edit it:
 
 ```bash
 cp config.yaml.example config.yaml
-echo "nc_data_dir: /path/to/my/netcdf" > config.yaml
-# Example for Windows users
-# echo "nc_data_dir: C:\Users\gindi002\DATASET\Era5_GRIB_NEW_dataset_2023-2019_and_more_future" > config.yaml
-# (This Windows path is also included as a comment in config.yaml.example.)
 ```
 
-The environment variable takes precedence. Individual scripts still
-allow `--netcdf-file` arguments to override this location for a single run.
+Example `config.yaml`:
+
+```yaml
+# config.yaml
+nc_data_dir: /path/to/my/netcdf
+```
+
+Or set the path via an environment variable:
+
+```bash
+export NC_DATA_DIR=/path/to/my/netcdf
+```
+
+`NC_DATA_DIR` overrides the value in `config.yaml`. Individual scripts can also
+pass `--netcdf-file` to override both for a single run. Database connections are
+configured with the `PV_DB_URL` environment variable.
 
 ## Input files
 
