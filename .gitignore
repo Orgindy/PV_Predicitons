@@ -17,6 +17,9 @@ secrets.json
 __pycache__/
 tests/__pycache__/
 
+# Ignore virtual environments
+venv/
+
 # Ignore system files
 .DS_Store
 Thumbs.db

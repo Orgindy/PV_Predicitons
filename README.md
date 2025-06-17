@@ -96,7 +96,7 @@ cp tests/data/sample_clustered_dataset.csv clustered_dataset.csv
 python synergy_index.py --input clustered_dataset.csv --output results/sample_synergy.csv
 
 cp tests/data/sample_merged_dataset.csv merged_dataset.csv
-python "Feature Preparation.py" --input-file merged_dataset.csv \
+python feature_preparation.py --input-file merged_dataset.csv \
     --validated-file validated_dataset.csv --physics-file physics_dataset.csv
 ```
 
