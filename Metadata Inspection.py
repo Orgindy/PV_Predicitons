@@ -1,8 +1,9 @@
 import os
+
 import xarray as xr
-import json
-from pprint import pprint
+
 from config import get_nc_dir
+
 
 def show_metadata(nc_path: str):
     """
@@ -13,7 +14,7 @@ def show_metadata(nc_path: str):
       • each data variable (dims, dtype, shape, attrs)
     """
     ds = xr.open_dataset(nc_path)
-    
+
     print("\n=== GLOBAL ATTRIBUTES ===")
     for key, val in ds.attrs.items():
         print(f"{key}: {val!r}")
@@ -47,11 +48,17 @@ def show_metadata(nc_path: str):
 
     ds.close()
 
+
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="Inspect NetCDF metadata")
-    parser.add_argument("nc_file", nargs="?", default=os.path.join(get_nc_dir(), "ERA5_daily.nc"),
-                        help="Path to NetCDF file")
+    parser.add_argument(
+        "nc_file",
+        nargs="?",
+        default=os.path.join(get_nc_dir(), "ERA5_daily.nc"),
+        help="Path to NetCDF file",
+    )
     args = parser.parse_args()
 
     nc_file = args.nc_file

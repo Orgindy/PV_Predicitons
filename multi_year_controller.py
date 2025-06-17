@@ -1,6 +1,8 @@
 import os
-from clustering import main_matching_pipeline
+
 import pandas as pd
+
+from clustering import main_matching_pipeline
 
 
 def multi_year_matching_pipeline(
@@ -48,6 +50,7 @@ def multi_year_matching_pipeline(
 
         if db_url:
             from database_utils import read_table, write_dataframe
+
             df = read_table(db_table, db_url=db_url)
             df = main_matching_pipeline(
                 clustered_data_path=input_file,
@@ -97,11 +100,16 @@ def multi_year_matching_pipeline(
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="Run multi-year matching")
-    parser.add_argument("--years", nargs="+", type=int, default=[2020, 2021, 2022, 2023])
+    parser.add_argument(
+        "--years", nargs="+", type=int, default=[2020, 2021, 2022, 2023]
+    )
     parser.add_argument("--base-input", default="results/clusters/")
     parser.add_argument("--output-dir", default="results/matching/")
-    parser.add_argument("--borders-path", default="data/borders/ne_10m_admin_0_countries.shp")
+    parser.add_argument(
+        "--borders-path", default="data/borders/ne_10m_admin_0_countries.shp"
+    )
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
     parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"))
     args = parser.parse_args()

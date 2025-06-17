@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from synergy_index import calculate_synergy_index
 import pv_potential
+from synergy_index import calculate_synergy_index
 
 
 def test_calculate_pv_potential_basic():

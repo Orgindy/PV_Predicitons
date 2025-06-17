@@ -5,16 +5,13 @@ Created on Mon May 26 12:21:06 2025
 @author: Gindi002
 """
 import os
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 
 def calculate_synergy_index(
-    T_pv,
-    T_rc,
-    GHI,
-    gamma_pv=-0.004,
-    rc_cooling_energy=None,
-    normalize_to=None
+    T_pv, T_rc, GHI, gamma_pv=-0.004, rc_cooling_energy=None, normalize_to=None
 ):
     """
     Calculate PV–RC synergy index.
@@ -34,16 +31,17 @@ def calculate_synergy_index(
     T_pv = np.array(T_pv)
     T_rc = np.array(T_rc)
     GHI = np.array(GHI)
-    
+
     # Validate inputs
     if len(T_pv) != len(T_rc) or len(T_pv) != len(GHI):
         raise ValueError("Input arrays must have the same length")
-    
+
     delta_T = T_pv - T_rc  # Cooling benefit [°C]
     # PV temperature coefficient is typically negative (efficiency drops with
     # higher cell temperature). The benefit from radiative cooling should be
     # positive, so we use the absolute value here.
-    delta_P = abs(gamma_pv) * delta_T * GHI  # Instantaneous PV power gain [W/m²]
+    # Instantaneous PV power gain [W/m²]
+    delta_P = abs(gamma_pv) * delta_T * GHI
 
     if rc_cooling_energy is None:
         rc_cooling_energy = np.zeros_like(delta_P)
@@ -58,7 +56,7 @@ def calculate_synergy_index(
     # Avoid division by zero
     if normalize_to == 0:
         return 0.0
-        
+
     synergy_index = (synergy.sum() / normalize_to) * 100  # %
 
     return synergy_index
@@ -104,7 +102,9 @@ def add_synergy_index(df, gamma_pv=-0.004, rc_energy_col=None):
     return df
 
 
-def add_synergy_index_to_dataset_vectorized(csv_path, output_path=None, gamma_pv=-0.004, rc_energy_col=None):
+def add_synergy_index_to_dataset_vectorized(
+    csv_path, output_path=None, gamma_pv=-0.004, rc_energy_col=None
+):
     """
     Load a dataset, compute synergy index for each row using vectorized operations, and save updated CSV.
 
@@ -138,37 +138,48 @@ def add_synergy_index_to_dataset_vectorized(csv_path, output_path=None, gamma_pv
 def calculate_synergy_metrics_summary(df, group_by_cols=None):
     """
     Calculate summary statistics for synergy index across different groups.
-    
+
     Parameters:
         df (pd.DataFrame): DataFrame with Synergy_Index column
         group_by_cols (list): Columns to group by (e.g., ['Cluster_ID', 'season'])
-    
+
     Returns:
         pd.DataFrame: Summary statistics. When ``group_by_cols`` is ``None`` a
         single-row DataFrame with the descriptive statistics is returned.
     """
-    if 'Synergy_Index' not in df.columns:
+    if "Synergy_Index" not in df.columns:
         raise ValueError("DataFrame must contain 'Synergy_Index' column")
-    
+
     if group_by_cols:
-        summary = df.groupby(group_by_cols)['Synergy_Index'].agg([
-            'count', 'mean', 'median', 'std', 'min', 'max'
-        ]).round(3)
+        summary = (
+            df.groupby(group_by_cols)["Synergy_Index"]
+            .agg(["count", "mean", "median", "std", "min", "max"])
+            .round(3)
+        )
     else:
-        summary = df['Synergy_Index'].describe().to_frame().T
-    
+        summary = df["Synergy_Index"].describe().to_frame().T
+
     return summary
 
 
 if __name__ == "__main__":
     import argparse
+
     from database_utils import read_table, write_dataframe
 
     parser = argparse.ArgumentParser(description="Add Synergy_Index to a dataset")
-    parser.add_argument("--input", default="clustered_dataset.csv", help="Input CSV path")
-    parser.add_argument("--output", default="clustered_dataset_synergy.csv", help="Output CSV path")
+    parser.add_argument(
+        "--input", default="clustered_dataset.csv", help="Input CSV path"
+    )
+    parser.add_argument(
+        "--output", default="clustered_dataset_synergy.csv", help="Output CSV path"
+    )
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"), help="Database URL")
-    parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"), help="Table name for DB operations")
+    parser.add_argument(
+        "--db-table",
+        default=os.getenv("PV_DB_TABLE", "pv_data"),
+        help="Table name for DB operations",
+    )
     args = parser.parse_args()
 
     if args.db_url:

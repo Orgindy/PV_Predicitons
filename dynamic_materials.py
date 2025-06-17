@@ -5,12 +5,15 @@ Created on Mon May 26 11:33:12 2025
 @author: Gindi002
 """
 import pandas as pd
+
 try:
     from pvlib.solarposition import get_solarposition
+
     PVLIB_AVAILABLE = True
 except ImportError:
     print("⚠️ pvlib not available - solar position functions will be limited")
     PVLIB_AVAILABLE = False
+
 
 def get_material_state(T_surface, GHI, profile):
     """
@@ -27,27 +30,28 @@ def get_material_state(T_surface, GHI, profile):
     """
     # Convert temperature to Celsius for easier threshold setting
     T_celsius = T_surface - 273.15 if T_surface > 200 else T_surface
-    
+
     # Check each state condition in priority order
     for state, conditions in profile["state_map"].items():
         meets_conditions = True
-        
+
         # Temperature conditions
         if "T_max" in conditions:
             meets_conditions &= T_celsius <= conditions["T_max"]
         if "T_min" in conditions:
             meets_conditions &= T_celsius >= conditions["T_min"]
-        
-        # Irradiance conditions  
+
+        # Irradiance conditions
         if "GHI_max" in conditions:
             meets_conditions &= GHI <= conditions["GHI_max"]
         if "GHI_min" in conditions:
             meets_conditions &= GHI >= conditions["GHI_min"]
-        
+
         if meets_conditions:
             return state
-    
+
     return profile.get("default", "static")
+
 
 def get_emissivity(state, emissivity_profile):
     """
@@ -62,6 +66,7 @@ def get_emissivity(state, emissivity_profile):
     """
     return emissivity_profile.get(state, emissivity_profile.get("default", 0.90))
 
+
 def get_alpha_solar(state, alpha_profile):
     """
     Return solar absorptivity based on the material state.
@@ -75,7 +80,10 @@ def get_alpha_solar(state, alpha_profile):
     """
     return alpha_profile.get(state, alpha_profile.get("default", 0.90))
 
-def get_material_properties(T_surface, GHI, solar_zenith, profile, emissivity_profile, alpha_profile):
+
+def get_material_properties(
+    T_surface, GHI, solar_zenith, profile, emissivity_profile, alpha_profile
+):
     """
     Return state, emissivity, and solar absorptivity based on switching logic.
 
@@ -95,19 +103,19 @@ def get_material_properties(T_surface, GHI, solar_zenith, profile, emissivity_pr
     profile = profile.copy()
     if "zenith_threshold" in profile:
         if solar_zenith >= profile["zenith_threshold"]:
-            profile["state_map"] = {"dark": {"T_min": 0}}  # force dark at sunset
+            # force dark at sunset
+            profile["state_map"] = {"dark": {"T_min": 0}}
         elif solar_zenith <= (90 - profile["zenith_threshold"]):
-            profile["state_map"] = {"bright": {"T_max": 1000}}  # force bright in strong daylight
+            profile["state_map"] = {
+                "bright": {"T_max": 1000}
+            }  # force bright in strong daylight
 
     state = get_material_state(T_surface, GHI, profile)
     epsilon = get_emissivity(state, emissivity_profile)
     alpha = get_alpha_solar(state, alpha_profile)
 
-    return {
-        "state": state,
-        "emissivity": epsilon,
-        "alpha": alpha
-    }
+    return {"state": state, "emissivity": epsilon, "alpha": alpha}
+
 
 def get_solar_zenith(lat, lon, times, tz="UTC"):
     """
@@ -118,10 +126,13 @@ def get_solar_zenith(lat, lon, times, tz="UTC"):
         print("⚠️ Using simplified zenith calculation - install pvlib for accuracy")
         # Simple approximation - replace with basic solar geometry if needed
         return pd.Series(45.0, index=times)  # Rough approximation
-    
-    times_local = times.tz_convert(tz) if times.tz is not None else times.tz_localize(tz)
+
+    times_local = (
+        times.tz_convert(tz) if times.tz is not None else times.tz_localize(tz)
+    )
     sp = get_solarposition(times_local, lat, lon)
     return sp["zenith"]
+
 
 def get_solar_elevation(lat, lon, times, tz="UTC"):
     """
@@ -130,42 +141,35 @@ def get_solar_elevation(lat, lon, times, tz="UTC"):
     if not PVLIB_AVAILABLE:
         print("⚠️ Using simplified elevation calculation - install pvlib for accuracy")
         return pd.Series(45.0, index=times)  # Rough approximation
-        
-    times_local = times.tz_convert(tz) if times.tz is not None else times.tz_localize(tz)
+
+    times_local = (
+        times.tz_convert(tz) if times.tz is not None else times.tz_localize(tz)
+    )
     sp = get_solarposition(times_local, lat, lon)
     return sp["elevation"]
+
 
 if __name__ == "__main__":
     # Example test profile
     profile = {
         "state_map": {
             "bright": {"T_max": 295, "GHI_max": 200},
-            "dark":   {"T_min": 295, "GHI_min": 200}
+            "dark": {"T_min": 295, "GHI_min": 200},
         },
-        "default": "static"
+        "default": "static",
     }
 
-    emissivity_profile = {
-        "bright": 0.95,
-        "dark": 0.80,
-        "static": 0.92,
-        "default": 0.90
-    }
+    emissivity_profile = {"bright": 0.95, "dark": 0.80, "static": 0.92, "default": 0.90}
 
-    alpha_profile = {
-        "bright": 0.10,
-        "dark":   0.90,
-        "static": 0.85,
-        "default": 0.90
-    }
-    
+    alpha_profile = {"bright": 0.10, "dark": 0.90, "static": 0.85, "default": 0.90}
+
     dynamic_profile = {
         "zenith_threshold": 85,  # if sun is near horizon, go into 'dark' mode
         "state_map": {
             "bright": {"T_max": 295, "GHI_max": 200},
-            "dark":   {"T_min": 295, "GHI_min": 200}
+            "dark": {"T_min": 295, "GHI_min": 200},
         },
-        "default": "static"
+        "default": "static",
     }
 
     state = get_material_state(T_surface=298, GHI=300, profile=profile)
@@ -175,4 +179,3 @@ if __name__ == "__main__":
     print(f"Material state: {state}")
     print(f"Emissivity: {epsilon}")
     print(f"Absorptivity: {alpha}")
-

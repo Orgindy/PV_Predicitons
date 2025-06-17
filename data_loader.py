@@ -1,5 +1,7 @@
-import numpy as np
 import os
+
+import numpy as np
+
 
 def load_scenario_inputs(folder_path, scenario, year):
     """
@@ -24,9 +26,9 @@ def load_scenario_inputs(folder_path, scenario, year):
     print(f"📂 Loading scenario data from: {base}")
 
     return {
-        "ghi":    np.load(os.path.join(base, "ghi.npy")),
-        "tair":   np.load(os.path.join(base, "tair.npy")),
-        "ir":     np.load(os.path.join(base, "ir_down.npy")),
-        "wind":   np.load(os.path.join(base, "wind.npy")),
-        "zenith": np.load(os.path.join(base, "zenith.npy"))
+        "ghi": np.load(os.path.join(base, "ghi.npy")),
+        "tair": np.load(os.path.join(base, "tair.npy")),
+        "ir": np.load(os.path.join(base, "ir_down.npy")),
+        "wind": np.load(os.path.join(base, "wind.npy")),
+        "zenith": np.load(os.path.join(base, "zenith.npy")),
     }

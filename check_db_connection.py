@@ -1,6 +1,8 @@
 import argparse
-from database_utils import get_engine
+
 from sqlalchemy.exc import SQLAlchemyError
+
+from database_utils import get_engine
 
 
 def main(db_url=None):

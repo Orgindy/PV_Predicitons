@@ -1,7 +1,7 @@
-import numpy as np
-from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
-from sklearn.mixture import GaussianMixture
+from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.metrics import silhouette_score
+from sklearn.mixture import GaussianMixture
+
 
 def run_kmeans(X, n_clusters=5, random_state=42):
     """
@@ -21,6 +21,7 @@ def run_kmeans(X, n_clusters=5, random_state=42):
     score = silhouette_score(X, labels)
     return labels, score
 
+
 def run_gmm(X, n_clusters=5, random_state=42):
     """
     Run Gaussian Mixture Model clustering and return labels and silhouette score.
@@ -38,6 +39,7 @@ def run_gmm(X, n_clusters=5, random_state=42):
     labels = model.fit_predict(X)
     score = silhouette_score(X, labels)
     return labels, score
+
 
 def run_dbscan(X, eps=0.5, min_samples=5):
     """
@@ -64,6 +66,7 @@ def run_dbscan(X, eps=0.5, min_samples=5):
 
     return labels, score
 
+
 def run_agglomerative(X, n_clusters=5):
     """
     Run Agglomerative (hierarchical) clustering and return labels and silhouette score.
@@ -80,6 +83,7 @@ def run_agglomerative(X, n_clusters=5):
     labels = model.fit_predict(X)
     score = silhouette_score(X, labels)
     return labels, score
+
 
 def run_clustering(X, method="kmeans", **kwargs):
     """
@@ -104,4 +108,3 @@ def run_clustering(X, method="kmeans", **kwargs):
         return run_agglomerative(X, **kwargs)
     else:
         raise ValueError(f"Unsupported clustering method: {method}")
-

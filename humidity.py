@@ -1,7 +1,7 @@
 # utils/humidity.py
 
 import numpy as np
-import pandas as pd
+
 
 def compute_relative_humidity(T_air_K, T_dew_K):
     """
@@ -23,6 +23,5 @@ def compute_relative_humidity(T_air_K, T_dew_K):
     e_s = np.exp((a * T_air) / (b + T_air))
     e_d = np.exp((a * T_dew) / (b + T_dew))
     RH = 100.0 * (e_d / e_s)
-    
-    return np.clip(RH, 0, 100)
 
+    return np.clip(RH, 0, 100)

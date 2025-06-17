@@ -1,25 +1,26 @@
 """Verify imports for packages listed in requirements.txt."""
+
+import sys
 from importlib import import_module
 from pathlib import Path
-import sys
 
-req_file = Path(__file__).resolve().parent.parent / 'requirements.txt'
+req_file = Path(__file__).resolve().parent.parent / "requirements.txt"
 IMPORT_MAPPING = {
-    'scikit-learn': 'sklearn',
-    'scikit-learn-extra': 'sklearn_extra',
-    'pyyaml': 'yaml',
+    "scikit-learn": "sklearn",
+    "scikit-learn-extra": "sklearn_extra",
+    "pyyaml": "yaml",
 }
-OPTIONAL = {'scikit-learn-extra'}
+OPTIONAL = {"scikit-learn-extra"}
 
 failures = []
 missing_optional = []
 
 for line in req_file.read_text().splitlines():
     pkg = line.strip()
-    if not pkg or pkg.startswith('#'):
+    if not pkg or pkg.startswith("#"):
         continue
-    name = pkg.split('==')[0].split('[')[0]
-    mod_name = IMPORT_MAPPING.get(name, name.replace('-', '_'))
+    name = pkg.split("==")[0].split("[")[0]
+    mod_name = IMPORT_MAPPING.get(name, name.replace("-", "_"))
     try:
         import_module(mod_name)
     except Exception as exc:
@@ -29,13 +30,13 @@ for line in req_file.read_text().splitlines():
             failures.append((mod_name, exc))
 
 if missing_optional:
-    print('Optional packages missing or failed to import:')
+    print("Optional packages missing or failed to import:")
     for mod_name, exc in missing_optional:
-        print(f'  {mod_name}: {exc}')
+        print(f"  {mod_name}: {exc}")
 
 if failures:
     for mod_name, exc in failures:
-        print(f'{mod_name}: {exc}')
+        print(f"{mod_name}: {exc}")
     sys.exit(1)
 else:
-    print('All required dependencies imported successfully.')
+    print("All required dependencies imported successfully.")

@@ -11,7 +11,7 @@ def calculate_pv_potential(GHI, T_air, RC_potential, Red_band, Total_band):
     Temp_Loss = -0.0045 * (T_cell - 25)
     RC_Gain = 0.01 * (RC_potential / 50)
 
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         Actual_Red_Fraction = np.divide(
             Red_band, Total_band, out=np.zeros_like(Red_band), where=Total_band != 0
         )

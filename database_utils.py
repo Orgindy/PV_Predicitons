@@ -1,8 +1,10 @@
 import os
+
 import pandas as pd
 from sqlalchemy import create_engine
 
 DEFAULT_DB_URL = os.getenv("PV_DB_URL", "sqlite:///pv_data.sqlite")
+
 
 def get_engine(db_url: str = None):
     """Return an SQLAlchemy engine for the given URL.
@@ -20,6 +22,7 @@ def get_engine(db_url: str = None):
     """
     url = db_url or DEFAULT_DB_URL
     return create_engine(url)
+
 
 def read_table(table_name: str, db_url: str = None):
     """Load an entire table into a :class:`pandas.DataFrame`.
@@ -39,7 +42,10 @@ def read_table(table_name: str, db_url: str = None):
     engine = get_engine(db_url)
     return pd.read_sql_table(table_name, engine)
 
-def write_dataframe(df: pd.DataFrame, table_name: str, db_url: str = None, if_exists: str = "replace"):
+
+def write_dataframe(
+    df: pd.DataFrame, table_name: str, db_url: str = None, if_exists: str = "replace"
+):
     """Write a DataFrame to a database table.
 
     Parameters

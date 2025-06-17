@@ -6,23 +6,21 @@ Created on Mon May 26 11:29:13 2025
 """
 import numpy as np
 from scipy.optimize import root_scalar
-from dynamic_materials import get_material_properties
 
 # Stefan-Boltzmann constant
 SIGMA = 5.670374419e-8  # W/m²·K⁴
 
 material_config = {
-    "alpha_solar": 0.90,       # Absorptivity in solar range (0–1)
-    "epsilon_IR": 0.92,        # Emissivity in thermal IR range (8–13 μm)
-    "thickness_m": 0.003,      # Effective thermal mass thickness [m]
-    "density": 2500,           # Density [kg/m³]
-    "cp": 900,                 # Specific heat [J/kg·K]
-    "h_conv_base": 5,          # Base convective coefficient [W/m²·K] at 0 m/s
-    "h_conv_wind_coeff": 4,    # Convective gain per 1 m/s wind
+    "alpha_solar": 0.90,  # Absorptivity in solar range (0–1)
+    "epsilon_IR": 0.92,  # Emissivity in thermal IR range (8–13 μm)
+    "thickness_m": 0.003,  # Effective thermal mass thickness [m]
+    "density": 2500,  # Density [kg/m³]
+    "cp": 900,  # Specific heat [J/kg·K]
+    "h_conv_base": 5,  # Base convective coefficient [W/m²·K] at 0 m/s
+    "h_conv_wind_coeff": 4,  # Convective gain per 1 m/s wind
     "use_dynamic_emissivity": False,
-    "emissivity_curve": None   # Optional function: T_surface → emissivity
+    "emissivity_curve": None,  # Optional function: T_surface → emissivity
 }
-
 
 
 def compute_temperature_series(
@@ -34,7 +32,7 @@ def compute_temperature_series(
     zenith_array=None,
     switching_profile=None,
     emissivity_profile=None,
-    alpha_profile=None
+    alpha_profile=None,
 ):
     """
     Compute surface temperature time series from hourly input data.
@@ -56,22 +54,26 @@ def compute_temperature_series(
     """
     n = len(ghi_array)
     T_surface_series = np.zeros(n)
-    
+
     # Check if dynamic materials are requested
-    use_dynamic = all(x is not None for x in [zenith_array, switching_profile, emissivity_profile, alpha_profile])
+    use_dynamic = all(
+        x is not None
+        for x in [zenith_array, switching_profile, emissivity_profile, alpha_profile]
+    )
 
     for i in range(n):
         GHI = ghi_array[i]
         T_air = tair_array[i]
         IR_down = ir_down_array[i]
         wind_speed = wind_array[i]
-        
+
         # Handle dynamic materials if enabled
         if use_dynamic:
             try:
                 from dynamic_materials import get_material_properties
+
                 solar_zenith = zenith_array[i]
-                
+
                 # Get dynamic material properties
                 props = get_material_properties(
                     T_surface=T_air,  # Initial guess
@@ -79,14 +81,14 @@ def compute_temperature_series(
                     solar_zenith=solar_zenith,
                     profile=switching_profile,
                     emissivity_profile=emissivity_profile,
-                    alpha_profile=alpha_profile
+                    alpha_profile=alpha_profile,
                 )
-                
+
                 # Update material config with dynamic values
                 dynamic_config = material_config.copy()
                 dynamic_config["alpha_solar"] = props["alpha"]
                 dynamic_config["epsilon_IR"] = props["emissivity"]
-                
+
                 config_to_use = dynamic_config
             except ImportError:
                 print("⚠️ Dynamic materials not available, using static properties")
@@ -106,6 +108,7 @@ def compute_temperature_series(
 
     return T_surface_series
 
+
 def compute_convective_loss(T_surface, T_air, wind_speed, config):
     """
     Compute convective heat loss based on surface and air temperature and wind speed.
@@ -123,6 +126,7 @@ def compute_convective_loss(T_surface, T_air, wind_speed, config):
     Q_conv = h * (T_surface - T_air)
     return Q_conv
 
+
 def compute_net_longwave_flux(T_surface, T_sky, config):
     """
     Compute net thermal IR radiation from surface to sky.
@@ -136,7 +140,7 @@ def compute_net_longwave_flux(T_surface, T_sky, config):
         Q_net_rad (float): Net outgoing radiation [W/m²]
     """
     epsilon = config["epsilon_IR"]
-    
+
     # Optional: support for dynamic emissivity
     if config.get("use_dynamic_emissivity") and config.get("emissivity_curve"):
         epsilon = config["emissivity_curve"](T_surface)
@@ -148,13 +152,7 @@ def compute_net_longwave_flux(T_surface, T_sky, config):
 
 
 def solve_surface_temperature(
-    GHI,
-    T_air,
-    IR_down,
-    wind_speed,
-    material_config,
-    T_guess=300.0,
-    max_iter=100
+    GHI, T_air, IR_down, wind_speed, material_config, T_guess=300.0, max_iter=100
 ):
     """
     Solve for surface temperature using energy balance:
@@ -189,7 +187,7 @@ def solve_surface_temperature(
         energy_balance,
         bracket=[T_air - 30, T_air + 60],
         method="brentq",
-        maxiter=max_iter
+        maxiter=max_iter,
     )
 
     if result.converged:
@@ -214,7 +212,7 @@ def estimate_pv_cell_temperature(GHI, T_air, wind_speed, model="NOCT", noct=45):
     """
 
     G_ref = 800  # Reference irradiance for NOCT
-    T_ref = 20   # Reference ambient temperature
+    T_ref = 20  # Reference ambient temperature
 
     if model == "NOCT":
         return T_air + ((noct - T_ref) / G_ref) * GHI
@@ -227,4 +225,3 @@ def estimate_pv_cell_temperature(GHI, T_air, wind_speed, model="NOCT", noct=45):
 
     else:
         raise ValueError("Unsupported model: choose 'NOCT' or 'Sandia'")
-

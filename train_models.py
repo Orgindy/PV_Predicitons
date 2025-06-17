@@ -1,8 +1,8 @@
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
-from sklearn.metrics import r2_score, mean_squared_error
 
 
 def train_all_models(X_train, X_test, y_train, y_test):
@@ -23,7 +23,9 @@ def train_all_models(X_train, X_test, y_train, y_test):
         R² and RMSE metrics for each model and the ensemble.
     """
     models = {
-        "RandomForest": RandomForestRegressor(n_estimators=200, max_depth=12, random_state=42),
+        "RandomForest": RandomForestRegressor(
+            n_estimators=200, max_depth=12, random_state=42
+        ),
         "GradientBoosting": GradientBoostingRegressor(random_state=42),
         "XGBoost": XGBRegressor(
             n_estimators=200,
