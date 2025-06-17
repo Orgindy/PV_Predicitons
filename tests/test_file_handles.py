@@ -27,7 +27,7 @@ def import_feature_module():
         sys.modules.setdefault(name, mod)
 
     import importlib.util
-    spec = importlib.util.spec_from_file_location('feature_preparation', str(Path(__file__).resolve().parents[1] / 'Feature Preparation.py'))
+    spec = importlib.util.spec_from_file_location('feature_preparation', str(Path(__file__).resolve().parents[1] / 'Feature_Preparation.py'))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
