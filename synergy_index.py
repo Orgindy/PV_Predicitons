@@ -8,6 +8,8 @@ import os
 import pandas as pd
 import numpy as np
 
+EMOJI_ENABLED = True
+
 def calculate_synergy_index(
     T_pv,
     T_rc,
@@ -117,7 +119,10 @@ def add_synergy_index_to_dataset_vectorized(csv_path, output_path=None, gamma_pv
     Returns:
         pd.DataFrame: Updated dataframe with 'Synergy_Index' column
     """
-    print(f"📥 Loading dataset from {csv_path}")
+    if EMOJI_ENABLED:
+        print(f"📥 Loading dataset from {csv_path}")
+    else:
+        print(f"Loading dataset from {csv_path}")
     df = pd.read_csv(csv_path)
     df = add_synergy_index(df, gamma_pv=gamma_pv, rc_energy_col=rc_energy_col)
 
@@ -130,7 +135,10 @@ def add_synergy_index_to_dataset_vectorized(csv_path, output_path=None, gamma_pv
         os.makedirs(output_dir, exist_ok=True)
 
     df.to_csv(output_path, index=False)
-    print(f"✅ Synergy index added and saved to: {output_path}")
+    if EMOJI_ENABLED:
+        print(f"✅ Synergy index added and saved to: {output_path}")
+    else:
+        print(f"Synergy index added and saved to: {output_path}")
 
     return df
 
@@ -169,13 +177,20 @@ if __name__ == "__main__":
     parser.add_argument("--output", default="clustered_dataset_synergy.csv", help="Output CSV path")
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"), help="Database URL")
     parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"), help="Table name for DB operations")
+    parser.add_argument("--no-emoji", action="store_true", help="Disable emoji output")
     args = parser.parse_args()
+
+    if args.no_emoji:
+        EMOJI_ENABLED = False
 
     if args.db_url:
         df = read_table(args.db_table, db_url=args.db_url)
         df = add_synergy_index(df)
         write_dataframe(df, args.db_table, db_url=args.db_url, if_exists="replace")
         df.to_csv(args.output, index=False)
-        print(f"✅ Results written to DB table {args.db_table}")
+        if EMOJI_ENABLED:
+            print(f"✅ Results written to DB table {args.db_table}")
+        else:
+            print(f"Results written to DB table {args.db_table}")
     else:
         add_synergy_index_to_dataset_vectorized(args.input, args.output)

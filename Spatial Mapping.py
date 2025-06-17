@@ -64,7 +64,7 @@ def overlay_technology_matches(geo_df, tech_col='Best_Technology', cluster_col='
     geo_df.plot(column=tech_col, ax=ax, legend=True, markersize=35, edgecolor='black', cmap='tab10')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("⚠️ Basemap could not be loaded — continuing without.")
 
     ax.set_title(title, fontsize=14)
@@ -245,7 +245,7 @@ def predict_pv_potential(model, X_scaled, df_original):
     try:
         pred_std = np.std([tree.predict(X_scaled) for tree in model.estimators_], axis=0)
         df_result['Prediction_Uncertainty'] = pred_std
-    except:
+    except Exception as e:
         pass
         
     return df_result
@@ -296,7 +296,7 @@ def plot_clusters_map(df, lat_col='latitude', lon_col='longitude', cluster_col='
     gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=35, edgecolor='k')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("Basemap could not be loaded.")
     ax.set_title(title)
     ax.set_axis_off()
@@ -330,7 +330,7 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
 
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("Basemap not loaded — offline mode.")
 
     ax.set_title("Best Matched PV Technology by Location", fontsize=15)
@@ -421,7 +421,7 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
 
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("Basemap not loaded — offline mode.")
 
     ax.set_title("Random Forest Prediction Uncertainty Map", fontsize=14)

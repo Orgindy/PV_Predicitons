@@ -586,7 +586,7 @@ def plot_prediction_uncertainty_with_contours(
     # Add basemap
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("Basemap not available – offline mode.")
 
     ax.set_title("Prediction Uncertainty Map", fontsize=16)
@@ -675,7 +675,7 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
         # Add basemap if possible
         try:
             ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-        except:
+        except Exception as e:
             print("⚠️ Basemap not available - continuing without")
 
         ax.set_title("Best Matched PV Technology by Location", fontsize=15)
@@ -746,7 +746,7 @@ def plot_clusters_map(df_clustered, lat_col='latitude', lon_col='longitude',
     borders.boundary.plot(ax=ax, color='gray', linewidth=1)
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("Basemap not loaded — offline mode.")
 
     ax.set_title(title, fontsize=16)
@@ -776,7 +776,7 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
 
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("Basemap not loaded — offline mode.")
 
     ax.set_title("Random Forest Prediction Uncertainty Map", fontsize=14)

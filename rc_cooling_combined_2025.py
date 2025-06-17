@@ -197,7 +197,7 @@ def add_effective_albedo_optimized(chunk, grib_path):
             try:
                 albedo_data = albedo_cache[time_key]
                 return float(albedo_data.interp(latitude=row['LAT'], longitude=row['LON'], method='nearest').values)
-            except:
+            except Exception as e:
                 return DEFAULT_RHO
         return DEFAULT_RHO
     

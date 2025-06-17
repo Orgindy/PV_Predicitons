@@ -18,8 +18,8 @@ def get_nc_dir() -> str:
                 data = yaml.safe_load(f) or {}
             if isinstance(data, dict) and data.get("nc_data_dir"):
                 return str(data["nc_data_dir"])
-        except Exception:
-            pass
+        except (OSError, yaml.YAMLError) as e:
+            print(f"Warning: could not read {config_path}: {e}")
 
     # 3. default
     return "netcdf_files"

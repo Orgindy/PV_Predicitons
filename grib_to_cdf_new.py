@@ -342,7 +342,7 @@ def identify_merge_dimension(netcdf_files, sample_size=3):
         try:
             for ds in sample_datasets:
                 ds.close()
-        except:
+        except Exception as e:
             pass
         return None
 
@@ -477,7 +477,7 @@ def merge_netcdf_files_chunked(netcdf_files, output_file, merge_dim=None, chunk_
             if os.path.exists(temp_file):
                 try:
                     os.remove(temp_file)
-                except:
+                except Exception as e:
                     pass
 
 def main():

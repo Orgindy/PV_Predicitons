@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
@@ -55,3 +56,22 @@ def train_all_models(X_train, X_test, y_train, y_test):
     }
 
     return predictions, performance
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train regression models")
+    parser.add_argument("--train-features", required=True, help="NumPy file with X_train")
+    parser.add_argument("--test-features", required=True, help="NumPy file with X_test")
+    parser.add_argument("--train-target", required=True, help="NumPy file with y_train")
+    parser.add_argument("--test-target", required=True, help="NumPy file with y_test")
+    args = parser.parse_args()
+
+    X_train = np.load(args.train_features)
+    X_test = np.load(args.test_features)
+    y_train = np.load(args.train_target)
+    y_test = np.load(args.test_target)
+
+    _, performance = train_all_models(X_train, X_test, y_train, y_test)
+    print("Model performance:")
+    for name, metrics in performance.items():
+        print(f"{name}: R2={metrics['R2']:.3f}, RMSE={metrics['RMSE']:.3f}")
