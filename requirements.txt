@@ -24,3 +24,4 @@ joblib
 psutil
 xgboost
 pytest
+flake8

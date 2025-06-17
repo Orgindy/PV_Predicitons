@@ -50,6 +50,8 @@ python scripts/check_imports.py
 python scripts/check_all_imports.py
 ```
 
+Run `flake8` to check code style and catch undefined names.
+
 ## NetCDF data directory
 
 Many scripts read NetCDF files from a shared location. Set the directory
