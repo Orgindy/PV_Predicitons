@@ -64,7 +64,8 @@ echo "nc_data_dir: /path/to/my/netcdf" > config.yaml
 # (This Windows path is also included as a comment in config.yaml.example.)
 ```
 
-The environment variable takes precedence. Individual scripts still
+The environment variable takes precedence. `config.yaml` is ignored by Git so you
+can adjust it locally. Individual scripts still
 allow `--netcdf-file` arguments to override this location for a single run.
 
 ## Input files

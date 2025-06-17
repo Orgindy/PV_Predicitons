@@ -825,14 +825,14 @@ Simulation Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
                         try:
                             map_img = fig_map.to_image(format="png", engine="kaleido")
                             zipf.writestr("recommended_zones_map.png", map_img)
-                        except:
+                        except Exception as e:
                             pass  # Skip if image export fails
                         
                         # Add temperature chart as PNG
                         try:
                             temp_img = fig_temp.to_image(format="png", engine="kaleido")
                             zipf.writestr("temperature_profiles.png", temp_img)
-                        except:
+                        except Exception as e:
                             pass  # Skip if image export fails
                     
                     zip_buffer.seek(0)

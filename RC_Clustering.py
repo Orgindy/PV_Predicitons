@@ -94,7 +94,7 @@ def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology'
 
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("⚠️ Basemap could not be loaded — offline mode.")
 
     ax.set_title("Overlay of RC Climate Zones and Optimal PV Technologies", fontsize=14)

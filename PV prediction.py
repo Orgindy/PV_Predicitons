@@ -324,7 +324,7 @@ def plot_clusters_map(df, lat_col='latitude', lon_col='longitude', cluster_col='
     gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=35, edgecolor='k')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except:
+    except Exception as e:
         print("Basemap could not be loaded.")
     ax.set_title(title)
     ax.set_axis_off()
