@@ -9,7 +9,6 @@ import os
 import numpy as np
 from sklearn.cluster import KMeans
 from matplotlib import ticker
-import matplotlib.pyplot as plt
 
 from shapely.geometry import Point
 import rasterio
