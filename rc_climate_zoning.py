@@ -8,44 +8,16 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 import contextily as ctx
 from scipy.constants import sigma as σ
-import joblib 
+import joblib
 import os
 from sklearn.metrics import silhouette_score
+
+from utils.sky_temperature import calculate_sky_temperature_improved
 
 # Constants
 DEFAULT_ALBEDO = 0.3
 DEFAULT_EMISSIVITY = 0.95
 GHI_THRESHOLD = 20  # W/m²
-
-def calculate_sky_temperature_improved(T_air, RH=50, cloud_cover=0):
-    """
-    Calculate sky temperature using proper atmospheric physics.
-    
-    Parameters:
-    - T_air: Air temperature in °C or array
-    - RH: Relative humidity in % (default 50)
-    - cloud_cover: Cloud fraction 0-1 (default 0)
-    
-    Returns:
-    - T_sky in °C
-    """
-    import numpy as np
-    
-    T_air_K = np.array(T_air) + 273.15
-    
-    # Swinbank's formula for clear sky emissivity
-    eps_clear = 0.741 + 0.0062 * np.array(RH)
-    
-    # Cloud correction (Duffie & Beckman)
-    eps_sky = eps_clear + (1 - eps_clear) * np.array(cloud_cover)
-    
-    # Clip emissivity to physical range
-    eps_sky = np.clip(eps_sky, 0.7, 1.0)
-    
-    # Sky temperature from Stefan-Boltzmann
-    T_sky_K = T_air_K * (eps_sky ** 0.25)
-    
-    return T_sky_K - 273.15
 
 def calculate_day_night_rc_split(df, albedo=DEFAULT_ALBEDO, emissivity=DEFAULT_EMISSIVITY):
     """
