@@ -7,17 +7,30 @@ output from SMARTS simulations.
 """
 
 import os
-import pandas as pd
+import argparse
+from pathlib import Path
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
-import argparse
 import glob
 from scipy import integrate
 import logging
 
 logging.basicConfig(level=logging.INFO)
+
+
+class DataProcessor:
+    """Utility class for loading and storing spectral data files."""
+
+    def __init__(self, input_folder: str, output_folder: str):
+        self.input_folder = Path(input_folder)
+        self.output_folder = Path(output_folder)
+        self.output_folder.mkdir(parents=True, exist_ok=True)
+
+    def load_data(self, file_path: Path) -> pd.DataFrame:
+        return pd.read_csv(file_path, delim_whitespace=True)
 
 
 def load_spectral_data(file_path):
