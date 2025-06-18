@@ -4,35 +4,9 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import contextily as ctx
-def calculate_sky_temperature_improved(T_air, RH=50, cloud_cover=0):
-    """
-    Calculate sky temperature using proper atmospheric physics.
-    
-    Parameters:
-    - T_air: Air temperature in °C or array
-    - RH: Relative humidity in % (default 50)
-    - cloud_cover: Cloud fraction 0-1 (default 0)
-    
-    Returns:
-    - T_sky in °C
-    """
-    import numpy as np
-    
-    T_air_K = np.array(T_air) + 273.15
-    
-    # Swinbank's formula for clear sky emissivity
-    eps_clear = 0.741 + 0.0062 * np.array(RH)
-    
-    # Cloud correction (Duffie & Beckman)
-    eps_sky = eps_clear + (1 - eps_clear) * np.array(cloud_cover)
-    
-    # Clip emissivity to physical range
-    eps_sky = np.clip(eps_sky, 0.7, 1.0)
-    
-    # Sky temperature from Stefan-Boltzmann
-    T_sky_K = T_air_K * (eps_sky ** 0.25)
-    
-    return T_sky_K - 273.15
+
+from utils.sky_temperature import calculate_sky_temperature_improved
+
 def rc_only_clustering(df, features=None, n_clusters=5, cluster_col='RC_Cluster'):
     """
     Perform K-Medoids clustering based on RC potential and thermal features.
