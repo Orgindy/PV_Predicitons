@@ -103,12 +103,18 @@ python feature_preparation.py --input-file merged_dataset.csv \
 These tiny files contain only a couple of rows so the commands complete very quickly.
 
 ## Running Tests
-Unit tests rely on the packages listed in `requirements.txt`. Make sure these
-dependencies are installed before executing the test suite. You can install
-them manually or use the helper script in `scripts/setup_env.sh`:
+Unit tests rely on the packages listed in `requirements.txt`. **Always install
+these dependencies before running `pytest`.** You can install them manually or
+use the helper script:
 
 ```bash
 pip install -r requirements.txt
+# or
+bash scripts/setup_env.sh
+
+# optional sanity check for missing packages
+python scripts/check_imports.py
+
 pytest
 ```
 

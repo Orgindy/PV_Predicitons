@@ -34,6 +34,8 @@ jobs:
         python -m pip install pytest
         if [ -f scripts/setup_env.sh ]; then bash scripts/setup_env.sh; \
         elif [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Verify imports
+      run: python scripts/check_imports.py
     - name: Test with pytest
       run: |
         pytest
