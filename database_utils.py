@@ -37,7 +37,8 @@ def read_table(table_name: str, db_url: str = None):
         DataFrame containing all rows from ``table_name``.
     """
     engine = get_engine(db_url)
-    return pd.read_sql_table(table_name, engine)
+    with engine.connect() as conn:
+        return pd.read_sql_table(table_name, conn)
 
 def write_dataframe(df: pd.DataFrame, table_name: str, db_url: str = None, if_exists: str = "replace"):
     """Write a DataFrame to a database table.
@@ -55,4 +56,5 @@ def write_dataframe(df: pd.DataFrame, table_name: str, db_url: str = None, if_ex
         :func:`DataFrame.to_sql`. Default ``"replace"``.
     """
     engine = get_engine(db_url)
-    df.to_sql(table_name, engine, if_exists=if_exists, index=False)
+    with engine.begin() as conn:
+        df.to_sql(table_name, conn, if_exists=if_exists, index=False)

@@ -100,15 +100,21 @@ def get_effective_albedo(grib_path: str, timestamp: pd.Timestamp, lat: float, lo
 
     grib_file = grib_files[0]
     try:
-        ds = xr.open_dataset(grib_file, engine='cfgrib')
-        if 'fal' not in ds:
-            logging.warning("GRIB file does not contain 'fal' (forecast albedo); using default albedo.")
-            return DEFAULT_RHO
-        ds = ds.sortby('time')
-        albedo_interp = ds['fal'].interp(time=[timestamp], latitude=[lat], longitude=[lon], method="nearest")
-        effective_albedo = float(albedo_interp.values[0])
-        logging.info(f"Retrieved effective albedo {effective_albedo:.3f} from GRIB.")
-        return effective_albedo
+        with xr.open_dataset(grib_file, engine='cfgrib') as ds:
+            if 'fal' not in ds:
+                logging.warning(
+                    "GRIB file does not contain 'fal' (forecast albedo); using default albedo."
+                )
+                return DEFAULT_RHO
+            ds = ds.sortby('time')
+            albedo_interp = ds['fal'].interp(
+                time=[timestamp], latitude=[lat], longitude=[lon], method="nearest"
+            )
+            effective_albedo = float(albedo_interp.values[0])
+            logging.info(
+                f"Retrieved effective albedo {effective_albedo:.3f} from GRIB."
+            )
+            return effective_albedo
     except Exception as e:
         logging.error(f"Error retrieving albedo from GRIB: {e}")
         return DEFAULT_RHO
@@ -178,6 +184,7 @@ def add_effective_albedo_optimized(chunk, grib_path):
     # Cache albedo values for each time
     albedo_cache = {}
     for time_val in unique_times:
+        time_val = pd.to_datetime(time_val)
         try:
             # Load GRIB data once per time step
             pattern = os.path.join(grib_path, f"*{time_val.year}{time_val.month:02d}*.grib")
