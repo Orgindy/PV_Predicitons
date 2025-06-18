@@ -1,7 +1,7 @@
-numpy
+numpy<2
 pandas
-scikit-learn
-scikit-learn-extra
+scikit-learn==1.7.0
+scikit-learn-extra==0.3.0
 xarray
 matplotlib
 cartopy

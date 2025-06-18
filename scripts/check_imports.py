@@ -18,7 +18,10 @@ for line in req_file.read_text().splitlines():
     pkg = line.strip()
     if not pkg or pkg.startswith('#'):
         continue
-    name = pkg.split('==')[0].split('[')[0]
+    base = pkg.split('[')[0]
+    for sep in ('==', '>=', '<=', '<', '>', '~='):
+        base = base.split(sep)[0]
+    name = base
     mod_name = IMPORT_MAPPING.get(name, name.replace('-', '_'))
     try:
         import_module(mod_name)
