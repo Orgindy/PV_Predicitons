@@ -1,5 +1,8 @@
 import os
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Dict
+
 import yaml
 
 
@@ -23,3 +26,32 @@ def get_nc_dir() -> str:
 
     # 3. default
     return "netcdf_files"
+
+
+@dataclass
+class AppConfig:
+    """Central application configuration loaded from the environment."""
+
+    memory_limit: float = 75.0
+    disk_space_min_gb: float = 10.0
+    max_file_size: int = 100 * 1024 * 1024
+    resource_check_interval: int = 60
+
+    @classmethod
+    def from_env(cls) -> "AppConfig":
+        """Load configuration from environment variables."""
+        return cls(
+            memory_limit=float(os.getenv("MAX_MEMORY_PERCENT", 75)),
+            disk_space_min_gb=float(os.getenv("DISK_SPACE_MIN_GB", 10)),
+            max_file_size=int(os.getenv("MAX_FILE_SIZE", 100 * 1024 * 1024)),
+            resource_check_interval=int(os.getenv("RESOURCE_CHECK_INTERVAL", 60)),
+        )
+
+    def validate(self) -> bool:
+        """Validate configuration values."""
+        return (
+            self.memory_limit > 0
+            and self.disk_space_min_gb > 0
+            and self.max_file_size > 0
+            and self.resource_check_interval > 0
+        )

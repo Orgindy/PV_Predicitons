@@ -7,7 +7,8 @@ from importlib import import_module
 from packaging.requirements import Requirement
 from pathlib import Path
 
-from utils.resource_monitor import ResourceMonitor
+from utils.resource_monitor import ResourceCleanup, ResourceMonitor
+from utils.file_operations import SafeFileOps
 
 # Import pipeline functions from the clustering module
 from clustering import (
@@ -100,8 +101,8 @@ def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
     os.makedirs("results", exist_ok=True)
     os.makedirs("results/maps", exist_ok=True)
 
-    if not ResourceMonitor.check_memory_usage():
-        logging.error("Insufficient memory")
+    if not ResourceMonitor.check_system_resources():
+        logging.error("Insufficient system resources")
         return None
     stats = ResourceMonitor.get_memory_stats()
     logging.info(
@@ -156,9 +157,8 @@ def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
                 random_state=42,
             )
             _, perf = train_all_models(X_train, X_test, y_train, y_test)
-            pd.DataFrame(perf).T.to_csv(
-                "model_performance_summary.csv", index_label="Model"
-            )
+            csv_content = pd.DataFrame(perf).T.to_csv(index_label="Model")
+            SafeFileOps.atomic_write(Path("model_performance_summary.csv"), csv_content)
             logging.info("✅ Model training complete")
         else:
             logging.warning("No target column found for model training")
@@ -364,8 +364,9 @@ if __name__ == "__main__":
     logging.info("=" * 50)
 
     try:
-        # Run main function
-        main()
+        with ResourceCleanup.cleanup_context():
+            # Run main function
+            main()
 
     finally:
         # Calculate and log total runtime
