@@ -308,7 +308,7 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Load data
-    print("Loading data...")
+    print("Loading data...")  # plain string
     yearly_df, seasonal_df = load_data(yearly_file, seasonal_file)
 
     # Get EU boundaries
@@ -320,14 +320,14 @@ def main():
     )
 
     # Create yearly maps
-    print("Creating yearly maps...")
+    print("Creating yearly maps...")  # plain string
     create_yearly_maps(yearly_df, output_dir, boundaries)
 
     # Create seasonal maps for both variables
-    print("Creating seasonal maps for P_rc_basic...")
+    print("Creating seasonal maps for P_rc_basic...")  # plain string
     create_seasonal_maps(seasonal_df, output_dir, boundaries, 'P_rc_basic')
     
-    print("Creating seasonal maps for P_rc_net...")
+    print("Creating seasonal maps for P_rc_net...")  # plain string
     create_seasonal_maps(seasonal_df, output_dir, boundaries, 'P_rc_net')
     
     print("All maps generated successfully!")

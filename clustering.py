@@ -837,14 +837,14 @@ def plot_clusters_with_kg(df, kg_raster='DATASET/kg_classification.tif', lat_col
 
 def main_matching_pipeline(
     clustered_data_path='data/clustered_dataset_rh_albedo.csv',
-    shapefile_path='data/borders/ne_10m_admin_0_countries.shp',
     output_file='matched_dataset.csv',
     k_range=range(2, 10),
     db_url=None,
     db_table=None,
 ):
     """
-    Full pipeline to assign best PV technology per location based on clustering + spectral analysis.
+    Full pipeline to assign best PV technology per location based on clustering
+    + spectral analysis. The final mapping no longer requires a shapefile path.
     """
     print("\n=== PV Technology Matching Pipeline ===")
     
@@ -914,6 +914,7 @@ def main_matching_pipeline(
     df_final = df_final.merge(df_clustered[['Cluster_ID', 'Cluster_Label']], on='Cluster_ID', how='left')
 
     print("\n=== Plotting Final Technology Recommendation Map ===")
+    # plot_technology_matches no longer requires a shapefile path
     plot_technology_matches(df_final, match_df, cluster_col='Cluster_ID')
     plot_prediction_uncertainty(df_final, output_path='results/maps/prediction_uncertainty_map.png')
     
