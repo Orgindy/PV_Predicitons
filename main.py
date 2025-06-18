@@ -4,6 +4,8 @@ from datetime import datetime
 import pandas as pd
 import argparse
 
+from utils.resource_monitor import ResourceMonitor
+
 # Import pipeline functions from the clustering module
 from clustering import (
     prepare_clustered_dataset,
@@ -75,6 +77,14 @@ def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
     os.makedirs("data", exist_ok=True)
     os.makedirs("results", exist_ok=True)
     os.makedirs("results/maps", exist_ok=True)
+
+    if not ResourceMonitor.check_memory_usage():
+        logging.error("Insufficient memory")
+        return None
+    stats = ResourceMonitor.get_memory_stats()
+    logging.info(
+        f"Memory usage: {stats['percent_used']:.1f}% of {stats['total_gb']:.1f} GB"
+    )
 
     if db_url:
         from database_utils import read_table, write_dataframe
