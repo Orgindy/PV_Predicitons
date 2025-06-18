@@ -12,20 +12,29 @@ sys.path.insert(0, str(ROOT))  # ensure local modules are importable
 # Gather installed module names for quick check
 installed = {m.name for m in pkgutil.iter_modules()}
 
-OPTIONAL = {'sklearn_extra'}
+OPTIONAL = {"sklearn_extra"}
 failures = []
 
-for path in ROOT.rglob('*.py'):
-    if path.parts[0] == '.git' or path.name.startswith('.'):  # skip hidden
+for path in ROOT.rglob("*.py"):
+    if path.parts[0] == ".git" or path.name.startswith("."):  # skip hidden
         continue
-    if path.suffix != '.py':
+    if path.suffix != ".py":
         continue
-    tree = ast.parse(path.read_text())
+    try:
+        source = path.read_text(encoding="utf-8")
+    except Exception as exc:
+        failures.append((path, "read", str(exc)))
+        continue
+    try:
+        tree = ast.parse(source)
+    except Exception as exc:
+        failures.append((path, "parse", str(exc)))
+        continue
     for node in tree.body:
         if isinstance(node, ast.Import):
             for alias in node.names:
-                mod = alias.name.split('.')[0]
-                local_path = ROOT / (mod.replace('.', '/') + '.py')
+                mod = alias.name.split(".")[0]
+                local_path = ROOT / (mod.replace(".", "/") + ".py")
                 if local_path.exists() or (ROOT / mod).is_dir():
                     continue
                 try:
@@ -38,10 +47,10 @@ for path in ROOT.rglob('*.py'):
             if node.level != 0:
                 # skip relative imports within repo
                 continue
-            mod = (node.module or '').split('.')[0]
+            mod = (node.module or "").split(".")[0]
             if not mod:
                 continue
-            local_path = ROOT / (mod.replace('.', '/') + '.py')
+            local_path = ROOT / (mod.replace(".", "/") + ".py")
             if local_path.exists() or (ROOT / mod).is_dir():
                 continue
             try:

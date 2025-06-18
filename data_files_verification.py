@@ -15,6 +15,8 @@ from __future__ import annotations
 import argparse
 import glob
 import os
+import signal
+from contextlib import contextmanager
 from typing import Dict, List
 
 import xarray as xr
@@ -26,6 +28,20 @@ import cfgrib  # noqa: F401
 
 
 PATTERNS = ["*.grib", "*.grb", "*.grib2", "*.grb2"]
+
+
+@contextmanager
+def time_limit(seconds: int):
+    def handler(signum, frame):
+        raise TimeoutError("Operation timed out")
+
+    original = signal.signal(signal.SIGALRM, handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, original)
 
 
 def find_grib_files(directory: str) -> List[str]:
@@ -47,7 +63,16 @@ def inspect_file(path: str) -> Dict[str, object]:
     """Open a GRIB file and return metadata information."""
     info: Dict[str, object] = {"file": os.path.basename(path)}
     try:
-        ds = xr.open_dataset(path, engine="cfgrib", backend_kwargs={"errors": "ignore"})
+        if not os.access(path, os.R_OK):
+            raise PermissionError(f"File not readable: {path}")
+        size = os.path.getsize(path)
+        if size > 1_000_000_000:  # >1 GB
+            raise OSError("File too large to process safely")
+
+        with time_limit(30):
+            ds = xr.open_dataset(
+                path, engine="cfgrib", backend_kwargs={"errors": "ignore"}
+            )
         info["dimensions"] = dict(ds.dims)
         info["variables"] = list(ds.data_vars)
         for name in ["time", "valid_time", "forecast_time"]:
@@ -82,7 +107,9 @@ def main(directory: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Inspect GRIB files and verify metadata")
+    parser = argparse.ArgumentParser(
+        description="Inspect GRIB files and verify metadata"
+    )
     parser.add_argument(
         "directory",
         nargs="?",
