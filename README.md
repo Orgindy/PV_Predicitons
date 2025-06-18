@@ -212,3 +212,23 @@ python rc_climate_zoning.py --db-url sqlite:///pv.sqlite --db-table zones
 python multi_year_controller.py --db-url sqlite:///pv.sqlite --db-table results
 ```
 
+
+## Utility Examples
+
+Use `ResourceMonitor` to verify system limits before running heavy tasks:
+
+```python
+from utils.resource_monitor import ResourceMonitor
+print(ResourceMonitor.check_system_resources())
+```
+
+Write files atomically using `SafeFileOps`:
+
+```python
+from utils.file_operations import SafeFileOps
+from pathlib import Path
+
+with SafeFileOps.atomic_write(Path("example.txt")) as f:
+    f.write("hello world")
+```
+
