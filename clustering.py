@@ -914,7 +914,7 @@ def main_matching_pipeline(
     df_final = df_final.merge(df_clustered[['Cluster_ID', 'Cluster_Label']], on='Cluster_ID', how='left')
 
     print("\n=== Plotting Final Technology Recommendation Map ===")
-    plot_technology_matches(df_final, match_df, cluster_col='Cluster_ID', borders_path=shapefile_path)
+    plot_technology_matches(df_final, match_df, cluster_col='Cluster_ID')
     plot_prediction_uncertainty(df_final, output_path='results/maps/prediction_uncertainty_map.png')
     
     compute_cluster_summary(df_final)
