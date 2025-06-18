@@ -2,8 +2,7 @@ import os
 import fcntl
 import logging
 from pathlib import Path
-from typing import Optional, Union, Iterator, IO, Any
-from contextlib import contextmanager
+from typing import Optional, Union, IO, Any
 
 
 class SafeFileOps:
@@ -12,19 +11,15 @@ class SafeFileOps:
     MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 100 * 1024 * 1024))
 
     @staticmethod
-    @contextmanager
-    def atomic_write(path: Path) -> Iterator[IO[str]]:
-        """Context manager for atomic file writes."""
+    def atomic_write(path: Path, content: str) -> None:
+        """Write file atomically using a temporary file."""
         tmp = path.with_suffix(".tmp")
         try:
             with tmp.open("w") as f:
-                yield f
+                f.write(content)
             tmp.replace(path)
         finally:
-            try:
-                tmp.unlink(missing_ok=True)
-            except Exception:
-                pass
+            tmp.unlink(missing_ok=True)
 
     @staticmethod
     def read_file_safely(

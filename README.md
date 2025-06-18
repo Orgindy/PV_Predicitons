@@ -228,7 +228,16 @@ Write files atomically using `SafeFileOps`:
 from utils.file_operations import SafeFileOps
 from pathlib import Path
 
-with SafeFileOps.atomic_write(Path("example.txt")) as f:
-    f.write("hello world")
+SafeFileOps.atomic_write(Path("example.txt"), "hello world")
+```
+
+Remove temporary files automatically:
+
+```python
+from utils.resource_monitor import ResourceCleanup
+
+with ResourceCleanup.cleanup_context():
+    # do work that creates *.tmp files
+    pass
 ```
 
