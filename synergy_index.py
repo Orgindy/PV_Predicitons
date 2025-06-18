@@ -53,15 +53,16 @@ def calculate_synergy_index(
         rc_cooling_energy = np.array(rc_cooling_energy)
 
     synergy = delta_P + rc_cooling_energy  # Total benefit in watts
+    synergy = np.nan_to_num(synergy)
 
     if normalize_to is None:
-        normalize_to = GHI.sum()  # Total GHI over the period
+        normalize_to = np.nansum(GHI)  # Total GHI over the period
 
     # Avoid division by zero
     if normalize_to == 0:
         return 0.0
-        
-    synergy_index = (synergy.sum() / normalize_to) * 100  # %
+
+    synergy_index = (np.nansum(synergy) / normalize_to) * 100  # %
 
     return synergy_index
 
@@ -98,11 +99,14 @@ def add_synergy_index(df, gamma_pv=-0.004, rc_energy_col=None):
         rc_energy = 0
 
     synergy_benefit = delta_P + rc_energy
-    df["Synergy_Index"] = np.where(
-        df["GHI"] > 0,
-        (synergy_benefit / df["GHI"]) * 100,
-        0,
-    )
+    with np.errstate(divide="ignore", invalid="ignore"):
+        ratio = np.divide(
+            synergy_benefit,
+            df["GHI"],
+            out=np.zeros_like(synergy_benefit, dtype=float),
+            where=df["GHI"] != 0,
+        )
+    df["Synergy_Index"] = ratio * 100
     return df
 
 
