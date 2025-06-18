@@ -129,30 +129,14 @@ def auto_generate_physics_pv(input_file, output_file, temp_coeff=-0.0045):
         print(f"❌ Missing required columns: {required_columns}")
         return
     
-    # Constants
-    NOCT = 45  # Nominal Operating Cell Temperature (°C)
-    Reference_Red_Fraction = 0.42  # AM1.5 standard red fraction
-    PR_ref = 0.80  # Reference performance ratio
-    
-    # 1. Estimate PV Cell Temperature
-    df["T_cell"] = df["T_air"] + (NOCT - 20) / 800 * df["GHI"]
-    
-    # 2. Temperature Loss
-    df["Temp_Loss"] = temp_coeff * (df["T_cell"] - 25)
-    
-    # 3. Radiative Cooling Gain
-    df["RC_Gain"] = 0.01 * (df["RC_potential"] / 50)
-    
-    # 4. Spectral Adjustment
-    df["Red_Fraction"] = df["Red_band"] / df["Total_band"]
-    df["Spectral_Adjust"] = (df["Red_Fraction"] - Reference_Red_Fraction)
-    
-    # 5. Corrected PR
-    df["PR_corrected"] = PR_ref + df["Temp_Loss"] + df["RC_Gain"] + df["Spectral_Adjust"]
-    df["PR_corrected"] = np.clip(df["PR_corrected"], 0.7, 0.9)  # Clip to realistic range
-    
-    # 6. Final PV Potential
-    df["PV_Potential_physics"] = df["GHI"] * df["PR_corrected"]
+    # Calculate PV potential using centralized implementation
+    df['PV_Potential_physics'] = calculate_pv_potential(
+        df['GHI'].values,
+        df['T_air'].values,
+        df['RC_potential'].values,
+        df['Red_band'].values,
+        df['Total_band'].values,
+    )
     
     # Save the updated file
     df.to_csv(output_file, index=False)
