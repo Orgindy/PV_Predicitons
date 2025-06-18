@@ -167,6 +167,7 @@ def batch_process_smarts_outputs(input_folder, output_file):
 
     # Save combined data
     final_df = pd.DataFrame(all_data)
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     final_df.to_csv(output_file, index=False)
     logging.info(f"✅ Combined spectral data saved to {output_file}")
 
@@ -222,6 +223,7 @@ def combine_band_data(input_folder, output_file):
             logging.info(f"❌ Failed to process {csv_file}: {e}")
 
     # Save the final combined dataset
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     combined_df.to_csv(output_file, index=False)
     logging.info(f"✅ Combined band data saved to {output_file}")
 
@@ -250,6 +252,7 @@ def add_spectral_ratios(input_file, output_file):
         df[f"{band}_Ratio"] = df[band] / df["Total_Irradiance"]
 
     # Save the updated file
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     df.to_csv(output_file, index=False)
     logging.info(f"✅ Spectral ratios added and saved to {output_file}")
 
