@@ -308,7 +308,7 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Load data
-    print("Loading data...")  # plain string to satisfy flake8 F541
+    print("Loading data...")  # plain string
     yearly_df, seasonal_df = load_data(yearly_file, seasonal_file)
 
     # Get EU boundaries

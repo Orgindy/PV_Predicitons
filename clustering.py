@@ -843,7 +843,8 @@ def main_matching_pipeline(
     db_table=None,
 ):
     """
-    Full pipeline to assign best PV technology per location based on clustering + spectral analysis.
+    Full pipeline to assign best PV technology per location based on clustering
+    + spectral analysis. The final mapping no longer requires a shapefile path.
     """
     print("\n=== PV Technology Matching Pipeline ===")
     
