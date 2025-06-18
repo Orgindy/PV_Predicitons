@@ -43,12 +43,18 @@ def parse_args():
 
 
 def validate_environment(args: argparse.Namespace) -> bool:
-    """Validate required environment variables when DB usage is requested."""
+    """Validate database configuration when DB usage is requested."""
     if args.db_url is None:
         return True
-    if not args.db_url.startswith("postgresql"):
-        logging.error("Invalid PV_DB_URL. Expected PostgreSQL URL")
+
+    if "://" not in args.db_url:
+        logging.error("Invalid PV_DB_URL format: %s", args.db_url)
         return False
+
+    if not args.db_table:
+        logging.error("PV_DB_TABLE must be provided when using a database")
+        return False
+
     return True
 
 

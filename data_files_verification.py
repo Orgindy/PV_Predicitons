@@ -65,18 +65,34 @@ def verify_dataset(ds: xr.Dataset) -> bool:
 def inspect_file(path: str) -> Dict[str, object]:
     """Open a GRIB file and return metadata information."""
     info: Dict[str, object] = {"file": os.path.basename(path)}
+
     if not os.path.exists(path):
+        info["error"] = "file not found"
+        info["valid"] = False
         return info
 
     size = os.path.getsize(path)
     if size > MAX_FILE_SIZE:
+        info["error"] = "file too large"
+        info["valid"] = False
         return info
 
-    with time_limit(30):
-        ds = xr.open_dataset(path, engine="cfgrib", backend_kwargs={"errors": "ignore"})
-        info["dimensions"] = dict(ds.dims)
-        info["variables"] = list(ds.data_vars)
-        ds.close()
+    try:
+        with time_limit(30):
+            ds = xr.open_dataset(
+                path, engine="cfgrib", backend_kwargs={"errors": "ignore"}
+            )
+            info["dimensions"] = dict(ds.dims)
+            info["variables"] = list(ds.data_vars)
+            info["valid"] = verify_dataset(ds)
+            if "time" in ds.coords:
+                info["start_time"] = str(ds["time"].min().values)
+                info["end_time"] = str(ds["time"].max().values)
+            ds.close()
+    except Exception as exc:
+        info["error"] = str(exc)
+        info["valid"] = False
+
     return info
 
 
@@ -85,9 +101,10 @@ def main(directory: str) -> None:
     print(f"Found {len(files)} GRIB file(s) in {directory}\n")
     for path in files:
         meta = inspect_file(path)
-        if meta is None:
+        if meta.get("error") == "file too large":
             print(f"Skipping {os.path.basename(path)} (file too large)")
             continue
+
         print(f"File: {meta['file']}")
         if meta.get("error"):
             print(f"  Error: {meta['error']}")
