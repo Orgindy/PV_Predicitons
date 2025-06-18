@@ -65,31 +65,18 @@ def verify_dataset(ds: xr.Dataset) -> bool:
 def inspect_file(path: str) -> Dict[str, object]:
     """Open a GRIB file and return metadata information."""
     info: Dict[str, object] = {"file": os.path.basename(path)}
-    try:
-        if not os.access(path, os.R_OK):
-            raise PermissionError(f"File not readable: {path}")
-        size = os.path.getsize(path)
-        if size > MAX_FILE_SIZE:
-            return None
+    if not os.path.exists(path):
+        return info
 
-        with time_limit(30):
-            ds = xr.open_dataset(
-                path, engine="cfgrib", backend_kwargs={"errors": "ignore"}
-            )
+    size = os.path.getsize(path)
+    if size > MAX_FILE_SIZE:
+        return info
+
+    with time_limit(30):
+        ds = xr.open_dataset(path, engine="cfgrib", backend_kwargs={"errors": "ignore"})
         info["dimensions"] = dict(ds.dims)
         info["variables"] = list(ds.data_vars)
-        for name in ["time", "valid_time", "forecast_time"]:
-            if name in ds.coords:
-                times = ds[name].values
-                if len(times) > 0:
-                    info["start_time"] = str(times[0])
-                    info["end_time"] = str(times[-1])
-                break
-        info["valid"] = verify_dataset(ds)
         ds.close()
-    except Exception as exc:  # pragma: no cover - informational
-        info["error"] = str(exc)
-        info["valid"] = False
     return info
 
 
