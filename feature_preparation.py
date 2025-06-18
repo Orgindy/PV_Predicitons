@@ -55,47 +55,7 @@ def parse_args():
 # --------------------------------------
 # 1. Physics-based PV potential function
 # --------------------------------------
-def calculate_pv_potential(GHI, T_air, RC_potential, Red_band, Total_band):
-    """
-    Calculate PV potential corrected by temperature loss, radiative cooling gain, and spectral adjustment.
-    
-    Parameters:
-    - GHI: Global Horizontal Irradiance [W/m²]
-    - T_air: Air Temperature at 2m [°C]
-    - RC_potential: Radiative Cooling Potential [W/m²]
-    - Red_band: Red band irradiance [W/m²]
-    - Total_band: Total band irradiance (Blue+Green+Red+IR) [W/m²]
-    
-    Returns:
-    - PV_Potential [W/m²]
-    """
-    # Constants
-    NOCT = 45  # Nominal Operating Cell Temperature [°C]
-    Reference_Red_Fraction = 0.42  # From AM1.5 standard
-    PR_ref = 0.80  # Reference performance ratio (typical PV system)
-
-    # 1. Estimate PV Cell Temperature
-    T_cell = T_air + (NOCT - 20) / 800 * GHI
-
-    # 2. Temperature Loss
-    Temp_Loss = -0.0045 * (T_cell - 25)
-
-    # 3. Radiative Cooling Gain
-    RC_Gain = 0.01 * (RC_potential / 50)
-
-    # 4. Spectral Adjustment
-    with np.errstate(divide='ignore', invalid='ignore'):
-        Actual_Red_Fraction = np.divide(Red_band, Total_band, out=np.zeros_like(Red_band), where=Total_band != 0)
-    Spectral_Adjust = (Actual_Red_Fraction - Reference_Red_Fraction)
-
-    # 5. Corrected PR
-    PR_corrected = PR_ref + Temp_Loss + RC_Gain + Spectral_Adjust
-    PR_corrected = np.clip(PR_corrected, 0.7, 0.9)
-
-    # 6. Final PV Potential
-    PV_Potential = GHI * PR_corrected  # [W/m²]
-    
-    return PV_Potential
+from pv_potential import calculate_pv_potential
 
 
 def validate_parameters(input_file, output_file, drop_invalid=True):
