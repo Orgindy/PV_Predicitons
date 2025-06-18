@@ -42,6 +42,7 @@ def load_data(yearly_file, seasonal_file):
         print(f"Error loading data: {str(e)}")
         sys.exit(1)
 
+
 def get_eu_boundaries(df):
     """
     Get latitude and longitude boundaries for the data, focused on EU region.
@@ -71,6 +72,7 @@ def get_eu_boundaries(df):
     lat_max = lat_max_eu if lat_max_eu <= lat_max else lat_max
     
     return lon_min, lon_max, lat_min, lat_max
+
 
 def create_yearly_maps(yearly_df, output_dir, boundaries):
     """
@@ -164,8 +166,9 @@ def create_yearly_maps(yearly_df, output_dir, boundaries):
     output_file = os.path.join(output_dir, f'yearly_rc_potential_{latest_year}.png')
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()
-    
+
     print(f"Saved yearly map to: {output_file}")
+
 
 def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
     """
@@ -265,8 +268,9 @@ def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
     output_file = os.path.join(output_dir, f'seasonal_rc_potential_{variable_str}_{latest_year}.png')
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()
-    
+
     print(f"Saved seasonal {variable} map to: {output_file}")
+
 
 def main():
     """Main execution function"""
@@ -292,7 +296,7 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     
     # Load data
-    print(f"Loading data...")
+    print("Loading data...")
     yearly_df, seasonal_df = load_data(yearly_file, seasonal_file)
     
     # Get EU boundaries
@@ -300,17 +304,18 @@ def main():
     print(f"Map boundaries: Longitude [{boundaries[0]:.2f}, {boundaries[1]:.2f}], Latitude [{boundaries[2]:.2f}, {boundaries[3]:.2f}]")
     
     # Create yearly maps
-    print(f"Creating yearly maps...")
+    print("Creating yearly maps...")
     create_yearly_maps(yearly_df, output_dir, boundaries)
     
     # Create seasonal maps for both variables
-    print(f"Creating seasonal maps for P_rc_basic...")
+    print("Creating seasonal maps for P_rc_basic...")
     create_seasonal_maps(seasonal_df, output_dir, boundaries, 'P_rc_basic')
     
-    print(f"Creating seasonal maps for P_rc_net...")
+    print("Creating seasonal maps for P_rc_net...")
     create_seasonal_maps(seasonal_df, output_dir, boundaries, 'P_rc_net')
     
     print("All maps generated successfully!")
+
 
 if __name__ == "__main__":
     main()
