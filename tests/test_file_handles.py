@@ -80,7 +80,8 @@ def test_load_netcdf_data_closes_file(tmp_path):
 
 def test_add_effective_albedo_context(monkeypatch, tmp_path):
     module = import_rc_module()
-    times = pd.date_range('2020-01-01', periods=1, freq='H')
+    # Use lower-case "h" to avoid pandas deprecation warning
+    times = pd.date_range('2020-01-01', periods=1, freq='h')
     df = pd.DataFrame({'time': times, 'LAT': [0.0], 'LON': [0.0]})
     grib_dir = tmp_path / 'grib'
     grib_dir.mkdir()
