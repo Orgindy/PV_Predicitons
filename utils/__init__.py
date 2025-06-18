@@ -2,6 +2,7 @@
 
 from .file_operations import SafeFileOps, FileLock
 from .resource_monitor import ResourceMonitor, ResourceCleanup
+from .dependency import DependencyManager
 from .sky_temperature import calculate_sky_temperature_improved
 
 __all__ = [
@@ -9,5 +10,6 @@ __all__ = [
     "FileLock",
     "ResourceMonitor",
     "ResourceCleanup",
+    "DependencyManager",
     "calculate_sky_temperature_improved",
 ]

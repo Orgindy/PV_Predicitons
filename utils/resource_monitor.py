@@ -1,8 +1,9 @@
 import os
 import psutil
 import logging
-from typing import Dict, Optional
+from typing import Optional
 from pathlib import Path
+from contextlib import contextmanager
 
 
 class ResourceMonitor:
@@ -14,13 +15,12 @@ class ResourceMonitor:
     CPU_MAX_PERCENT = float(os.getenv("CPU_MAX_PERCENT", 90))
 
     @staticmethod
-    def check_system_resources() -> Dict[str, bool]:
+    def check_system_resources() -> bool:
         """Check all system resources."""
-        return {
-            "memory": ResourceMonitor.check_memory_usage(),
-            "disk": ResourceMonitor.check_disk_space(),
-            "cpu": ResourceMonitor.check_cpu_usage(),
-        }
+        memory_ok = ResourceMonitor.check_memory_usage()
+        disk_ok = ResourceMonitor.check_disk_space()
+        cpu_ok = ResourceMonitor.check_cpu_usage()
+        return memory_ok and disk_ok and cpu_ok
 
     @staticmethod
     def check_memory_usage(threshold: Optional[float] = None) -> bool:
@@ -64,3 +64,12 @@ class ResourceCleanup:
                 tmp_file.unlink()
             except Exception as e:
                 logging.error(f"Failed to remove {tmp_file}: {e}")
+
+    @staticmethod
+    @contextmanager
+    def cleanup_context(directory: Path = Path.cwd()):
+        """Context manager for resource cleanup."""
+        try:
+            yield
+        finally:
+            ResourceCleanup.cleanup_temp_files(directory)

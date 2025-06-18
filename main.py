@@ -381,5 +381,4 @@ if __name__ == "__main__":
         logging.info(f"⏱️ Total runtime: {runtime}")
         logging.info("🏁 PIPELINE FINISHED")
         logging.info("=" * 50)
-        with SafeFileOps.atomic_write(Path("output.txt")) as f:
-            f.write("Processing complete")
+        SafeFileOps.atomic_write(Path("output.txt"), "Processing complete")

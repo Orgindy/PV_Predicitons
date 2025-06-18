@@ -10,8 +10,7 @@ class TestUtils(unittest.TestCase):
         self.assertIsNone(SafeFileOps.read_file_safely("nonexistent.txt"))
 
         # valid file returns content
-        with SafeFileOps.atomic_write(Path("test.txt")) as f:
-            f.write("test content")
+        SafeFileOps.atomic_write(Path("test.txt"), "test content")
         self.assertIsNotNone(SafeFileOps.read_file_safely("test.txt"))
 
     def test_memory_monitoring(self):
