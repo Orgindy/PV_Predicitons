@@ -353,7 +353,7 @@ with st.sidebar:
         help="Choose a preset or select 'Custom' for manual input"
     )
 
-    # Default material properties
+    # Default material properties to avoid undefined variables
     epsilon = 0.92
     alpha = 0.85
 
