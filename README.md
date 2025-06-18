@@ -206,3 +206,61 @@ python rc_climate_zoning.py --db-url sqlite:///pv.sqlite --db-table zones
 python multi_year_controller.py --db-url sqlite:///pv.sqlite --db-table results
 ```
 
+
+## Configuration Options
+
+The project uses a small configuration dataclass `AppConfig` located in `config.py`.
+Values can be loaded from environment variables or left at their defaults:
+
+- `MAX_MEMORY_PERCENT` – Memory usage threshold (default 75)
+- `DISK_SPACE_MIN_GB` – Minimum free disk space in gigabytes (default 10)
+- `MAX_FILE_SIZE` – Maximum safe file size for reads (default 100MB)
+- `RESOURCE_CHECK_INTERVAL` – Interval in seconds between resource checks
+
+Example:
+
+```python
+from config import AppConfig
+
+cfg = AppConfig.from_env()
+if not cfg.validate():
+    raise ValueError("Invalid configuration")
+```
+
+## Resource Monitoring and Cleanup
+
+Utilities under `utils.resource_monitor` provide helpers for checking
+available memory, disk space and CPU usage. The `ResourceCleanup` context
+manager removes temporary files and triggers garbage collection when a block
+of work finishes.
+
+```python
+from utils.resource_monitor import ResourceCleanup, ResourceMonitor
+
+if not ResourceMonitor.check_system_resources():
+    raise RuntimeError("Insufficient system resources")
+
+with ResourceCleanup.cleanup_context():
+    main()
+```
+
+## Safe File Operations
+
+File writes in the pipeline should use `SafeFileOps.atomic_write` from
+`utils.file_operations` to avoid partial writes:
+
+```python
+from pathlib import Path
+from utils.file_operations import SafeFileOps
+
+SafeFileOps.atomic_write(Path("output.csv"), csv_content)
+```
+
+## Troubleshooting
+
+- **Resource warnings** – Adjust the environment variables listed above if the
+  scripts fail due to memory or disk limits.
+- **Missing dependencies** – Install packages from `requirements.txt` and run
+  `python scripts/check_imports.py` to verify imports.
+- **Database errors** – Ensure the `PV_DB_URL` environment variable points to a
+  valid SQLAlchemy connection string and that the target database is accessible.
