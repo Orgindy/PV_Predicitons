@@ -5,7 +5,16 @@ from pathlib import Path
 import sys
 from packaging.requirements import Requirement
 from packaging.version import Version
-from importlib.metadata import version as get_version, PackageNotFoundError
+try:
+    from importlib.metadata import (
+        version as get_version,
+        PackageNotFoundError,
+    )
+except ImportError:  # pragma: no cover - fallback for older Python
+    from importlib_metadata import (
+        version as get_version,
+        PackageNotFoundError,
+    )
 
 req_file = Path(__file__).resolve().parent.parent / "requirements.txt"
 IMPORT_MAPPING = {

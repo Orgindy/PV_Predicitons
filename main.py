@@ -258,6 +258,9 @@ def main():
         return
     mode = args.mode
 
+    # Ensure output directories exist
+    os.makedirs("results/maps", exist_ok=True)
+
     logging.info(f"🚀 Starting RC-PV pipeline in '{mode}' mode")
 
     # Check for required files
