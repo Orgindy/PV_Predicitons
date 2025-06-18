@@ -352,7 +352,10 @@ with st.sidebar:
         ["Custom", "Standard RC", "High-Performance RC", "Selective Emitter"],
         help="Choose a preset or select 'Custom' for manual input"
     )
-    
+
+    # Default material values to avoid uninitialized variables
+    epsilon, alpha = 0.92, 0.85
+
     if material_preset == "Custom":
         epsilon = st.slider(
             "Emissivity (ε)", 
