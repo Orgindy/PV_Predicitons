@@ -1,5 +1,6 @@
 import argparse
 from database_utils import get_engine
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -7,7 +8,7 @@ def main(db_url=None):
     try:
         engine = get_engine(db_url)
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
         print("Successfully connected to the database.")
     except SQLAlchemyError as e:
         print(f"Database connection failed: {e}")
