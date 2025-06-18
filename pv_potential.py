@@ -2,6 +2,15 @@ import numpy as np
 from typing import Union, Tuple
 
 
+def validate_temperature_coefficient(temp_coeff: float) -> float:
+    """Validate temperature coefficient is within physical bounds."""
+    if not isinstance(temp_coeff, (int, float)):
+        raise TypeError("Temperature coefficient must be a number")
+    if not -0.01 <= temp_coeff <= 0:
+        raise ValueError("Temperature coefficient must be between -0.01 and 0")
+    return float(temp_coeff)
+
+
 def validate_pv_inputs(
     GHI: np.ndarray,
     T_air: np.ndarray,
