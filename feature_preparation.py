@@ -58,6 +58,26 @@ def parse_args():
 from pv_potential import calculate_pv_potential
 
 
+def map_netcdf_variables(df):
+    """Map NetCDF variable names to standardized column names."""
+    variable_mapping = {
+        'T2m': 'T_air',
+        'SSRD_power': 'GHI',
+        'NET_RAD': 'RC_potential',
+        'Red_band': 'Red_band',
+        'Total_band': 'Total_band',
+    }
+    for src, dest in variable_mapping.items():
+        if src in df.columns:
+            df[dest] = df[src]
+
+
+def has_required_columns(df):
+    """Return True if DataFrame has all columns needed for PV calculation."""
+    required = ['GHI', 'T_air', 'RC_potential', 'Red_band', 'Total_band']
+    return all(col in df.columns for col in required)
+
+
 def validate_parameters(input_file, output_file, drop_invalid=True):
     """
     Validates climate, RC, and spectral parameters to ensure physical accuracy.
@@ -207,54 +227,27 @@ def load_netcdf_data(netcdf_file, sample_fraction=0.1):
     return df
 
 def calculate_pv_potential_netcdf(df):
-    """
-    Calculate PV potential directly from NetCDF data.
-    Assumes your NetCDF has variables like T2m, GHI, etc.
-    """
+    """Calculate PV potential directly from NetCDF data."""
     print("Calculating PV potential from NetCDF data...")
-    
-    # Map NetCDF variable names to expected names
-    # Adjust these based on your actual NetCDF variable names
-    variable_mapping = {
-        'T2m': 'T_air',                    # Temperature
-        'SSRD_power': 'GHI',               # Global Horizontal Irradiance  
-        'RH': 'RH',                        # Relative Humidity
-        'WS': 'Wind_Speed',                # Wind Speed
-        'NET_RAD': 'RC_potential',         # Use net radiation as proxy for RC potential
-        # Add more mappings based on your NetCDF variables
-    }
-    
-    # Create mapped columns
-    for netcdf_var, standard_var in variable_mapping.items():
-        if netcdf_var in df.columns:
-            df[standard_var] = df[netcdf_var]
-    
-    # Calculate PV potential using available variables
-    if 'GHI' in df.columns and 'T_air' in df.columns:
-        # Constants
-        NOCT = 45  # Nominal Operating Cell Temperature [°C]
-        PR_ref = 0.80  # Reference performance ratio
-        
-        # Basic PV potential calculation
-        df['T_cell'] = df['T_air'] + (NOCT - 20) / 800 * df['GHI']
-        df['Temp_Loss'] = -0.0045 * (df['T_cell'] - 25)
-        
-        # Add RC gain if available
-        if 'RC_potential' in df.columns:
-            df['RC_Gain'] = 0.01 * (df['RC_potential'] / 50)
-        else:
-            df['RC_Gain'] = 0  # No RC gain if not available
-        
-        # Calculate corrected PR
-        df['PR_corrected'] = (PR_ref + df['Temp_Loss'] + df['RC_Gain']).clip(0.7, 0.9)
-        df['PV_Potential'] = df['GHI'] * df['PR_corrected']
-        
+
+    # Map variables from NetCDF-specific names
+    map_netcdf_variables(df)
+
+    # Use centralized implementation when possible
+    if has_required_columns(df):
+        df['PV_Potential'] = calculate_pv_potential(
+            df['GHI'].values,
+            df['T_air'].values,
+            df['RC_potential'].values,
+            df['Red_band'].values,
+            df['Total_band'].values,
+        )
         print("✅ PV potential calculated")
     else:
+        missing = [c for c in ['GHI', 'T_air', 'RC_potential', 'Red_band', 'Total_band'] if c not in df.columns]
         print("❌ Missing required variables for PV calculation")
-        print(f"Available: {[col for col in ['GHI', 'T_air'] if col in df.columns]}")
-        print(f"Missing: {[col for col in ['GHI', 'T_air'] if col not in df.columns]}")
-    
+        print(f"Missing: {missing}")
+
     return df
 
 def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
