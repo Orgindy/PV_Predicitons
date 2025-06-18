@@ -7,7 +7,7 @@ import pkgutil
 import sys
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))  # ensure local modules are importable
 
 # Gather installed module names for quick check

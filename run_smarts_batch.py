@@ -1,10 +1,11 @@
 import os
-import subprocess
-from pathlib import Path
 import time
+import subprocess
 from multiprocessing import Pool, cpu_count
 import argparse
+from pathlib import Path
 from dataclasses import dataclass
+import psutil
 
 
 @dataclass
@@ -13,6 +14,21 @@ class BatchConfig:
     inp_dir: Path
     out_dir: Path
     timeout: int = 300
+    max_retries: int = 3
+    min_disk_space: int = 100 * 1024 * 1024  # 100MB
+
+    def validate(self) -> bool:
+        return (
+            Path(self.smarts_exe).exists()
+            and self.inp_dir.exists()
+            and self.check_disk_space()
+        )
+
+    def check_disk_space(self) -> bool:
+        try:
+            return psutil.disk_usage(self.out_dir).free >= self.min_disk_space
+        except Exception:
+            return False
 
 
 # === USER CONFIG (overridden by CLI) ===
@@ -55,6 +71,16 @@ def validate_smarts_executable(exe_path):
 
     print(f"✅ SMARTS executable validated: {exe_path}")
     return True
+
+
+def run_smarts_process(cfg: BatchConfig, input_file: Path) -> bool:
+    """Run a single SMARTS simulation"""
+    command = f"{cfg.smarts_exe} {input_file}"
+    try:
+        subprocess.run(command, check=True, shell=True, timeout=cfg.timeout)
+        return True
+    except Exception:
+        return False
 
 
 def retry_failed_runs(cfg: BatchConfig, max_retries=3, delay=5):
