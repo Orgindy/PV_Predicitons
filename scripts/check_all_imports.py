@@ -19,16 +19,20 @@ failures = []
 for path in ROOT.rglob("*.py"):
     if path.parts[0] == ".git" or path.name.startswith("."):  # skip hidden
         continue
-    if path.suffix != ".py":
+    if path.suffix != ".py" or path.name.endswith(".pyc"):
         continue
     try:
         source = path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         try:
             source = path.read_text(encoding="latin-1")
-        except Exception as exc:
-            failures.append((path, "read", str(exc)))
-            continue
+        except UnicodeDecodeError:
+            try:
+                with open(path, "rb") as f:
+                    source = f.read().decode("utf-8", errors="ignore")
+            except Exception as exc:
+                failures.append((path, "read", str(exc)))
+                continue
     try:
         tree = ast.parse(source)
     except Exception as exc:

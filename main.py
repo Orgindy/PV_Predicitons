@@ -3,6 +3,9 @@ import logging
 from datetime import datetime
 import pandas as pd
 import argparse
+from importlib import import_module
+from packaging.requirements import Requirement
+from pathlib import Path
 
 from utils.resource_monitor import ResourceMonitor
 
@@ -63,6 +66,25 @@ def check_required_files(input_file):
 
     if missing_files:
         logging.warning(f"Missing files: {missing_files}")
+        return False
+    return True
+
+
+def check_dependencies(requirements: Path) -> bool:
+    """Ensure dependencies listed in requirements are importable."""
+    missing = []
+    for line in requirements.read_text().splitlines():
+        pkg = line.strip()
+        if not pkg or pkg.startswith("#"):
+            continue
+        name = Requirement(pkg).name
+        mod = name.replace("-", "_")
+        try:
+            import_module(mod)
+        except Exception:
+            missing.append(mod)
+    if missing:
+        logging.error(f"Missing dependencies: {', '.join(missing)}")
         return False
     return True
 
@@ -256,9 +278,14 @@ def main():
     args = parse_args()
     if not validate_environment(args):
         return
+    req_file = Path(__file__).resolve().parent / "requirements.txt"
+    if not check_dependencies(req_file):
+        logging.error("Missing required dependencies")
+        return
     mode = args.mode
 
     # Ensure output directories exist
+    os.makedirs("data", exist_ok=True)
     os.makedirs("results/maps", exist_ok=True)
 
     logging.info(f"🚀 Starting RC-PV pipeline in '{mode}' mode")
