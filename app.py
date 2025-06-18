@@ -354,7 +354,7 @@ with st.sidebar:
     )
 
     # Default material values to avoid uninitialized variables
-    epsilon, alpha = 0.92, 0.85
+    epsilon, alpha = 0.92, 0.85  # assigned before conditional branches
 
     if material_preset == "Custom":
         epsilon = st.slider(
