@@ -6,7 +6,6 @@ from pathlib import Path
 import pkgutil
 import sys
 
-from utils.file_operations import read_file_safely
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))  # ensure local modules are importable
@@ -22,10 +21,14 @@ for path in ROOT.rglob("*.py"):
         continue
     if path.suffix != ".py":
         continue
-    source = read_file_safely(path)
-    if source is None:
-        failures.append((path, "read", "unable to read"))
-        continue
+    try:
+        source = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        try:
+            source = path.read_text(encoding="latin-1")
+        except Exception as exc:
+            failures.append((path, "read", str(exc)))
+            continue
     try:
         tree = ast.parse(source)
     except Exception as exc:

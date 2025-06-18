@@ -16,7 +16,9 @@ import argparse
 import glob
 import os
 import signal
+import subprocess
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Dict, List
 
 import xarray as xr
@@ -28,6 +30,7 @@ import cfgrib  # noqa: F401
 
 
 PATTERNS = ["*.grib", "*.grb", "*.grib2", "*.grb2"]
+MAX_FILE_SIZE = 1_000_000_000  # 1 GB
 
 
 @contextmanager
@@ -66,8 +69,8 @@ def inspect_file(path: str) -> Dict[str, object]:
         if not os.access(path, os.R_OK):
             raise PermissionError(f"File not readable: {path}")
         size = os.path.getsize(path)
-        if size > 1_000_000_000:  # >1 GB
-            raise OSError("File too large to process safely")
+        if size > MAX_FILE_SIZE:
+            return None
 
         with time_limit(30):
             ds = xr.open_dataset(
@@ -95,6 +98,9 @@ def main(directory: str) -> None:
     print(f"Found {len(files)} GRIB file(s) in {directory}\n")
     for path in files:
         meta = inspect_file(path)
+        if meta is None:
+            print(f"Skipping {os.path.basename(path)} (file too large)")
+            continue
         print(f"File: {meta['file']}")
         if meta.get("error"):
             print(f"  Error: {meta['error']}")
