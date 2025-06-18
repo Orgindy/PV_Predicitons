@@ -353,8 +353,8 @@ with st.sidebar:
         help="Choose a preset or select 'Custom' for manual input"
     )
 
-    # Default material values to avoid uninitialized variables
-    epsilon, alpha = 0.92, 0.85  # assigned before conditional branches
+    # Default emissivity and absorptivity so variables are always defined
+    epsilon, alpha = 0.92, 0.85
 
     if material_preset == "Custom":
         epsilon = st.slider(
