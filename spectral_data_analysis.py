@@ -11,6 +11,8 @@ import argparse
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # non-interactive backend
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
@@ -44,38 +46,31 @@ def load_spectral_data(file_path):
         DataFrame with the spectral data
     """
     try:
-        # Read the file - skip header lines
-        with open(file_path, "r") as f:
-            lines = f.readlines()
-
-        # Find the line that starts the data
+        # Detect header line first
         header_line = None
-        for i, line in enumerate(lines):
-            if line.strip().startswith("Wvlgth"):
-                header_line = i
-                break
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            for i, line in enumerate(f):
+                if line.strip().startswith("Wvlgth"):
+                    header_line = i
+                    header = line.strip().split()
+                    break
 
         if header_line is None:
             logging.info(f"❌ 'Wvlgth' not found in {file_path}")
             return None
 
-        # Parse header
-        header = lines[header_line].strip().split()
-
-        # Parse data
-        data = []
-        for line in lines[header_line + 1 :]:
-            if line.strip():
-                values = line.strip().split()
-                if len(values) == len(header):
-                    data.append(values)
-
-        try:
-            df = pd.DataFrame(data, columns=header).astype(float)
-        except Exception as e:
-            logging.info(f"❌ Failed to convert data to float in {file_path}: {e}")
-            return None
-
+        chunks = []
+        for chunk in pd.read_csv(
+            file_path,
+            delim_whitespace=True,
+            header=None,
+            names=header,
+            skiprows=header_line + 1,
+            chunksize=50000,
+            engine="python",
+        ):
+            chunks.append(chunk)
+        df = pd.concat(chunks, ignore_index=True).astype(float)
         return df
     except Exception as e:
         logging.info(f"Error loading {file_path}: {e}")
@@ -918,6 +913,9 @@ def main():
     output_folder = args.output_folder
 
     os.makedirs(output_folder, exist_ok=True)
+    if not os.path.isdir(input_folder):
+        logging.info(f"❌ Input folder not found: {input_folder}")
+        return
 
     # Find all SMARTS .ext.txt files in the folder
     files = glob.glob(os.path.join(input_folder, "*.ext.txt"))

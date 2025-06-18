@@ -20,13 +20,19 @@ import subprocess
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, List
+import platform
+import threading
 
-import xarray as xr
+try:
+    import xarray as xr
+except Exception as e:  # pragma: no cover - optional dependency
+    xr = None  # type: ignore
+    print(f"Warning: xarray failed to import: {e}")
 
-# ``cfgrib`` is used via xarray's engine, ensure it's imported so the engine is
-# registered. If not installed, xarray will raise an informative error when
-# attempting to open a file.
-import cfgrib  # noqa: F401
+try:  # pragma: no cover - optional dependency
+    import cfgrib  # noqa: F401
+except Exception as e:
+    print(f"Warning: cfgrib failed to import: {e}")
 
 
 PATTERNS = ["*.grib", "*.grb", "*.grib2", "*.grb2"]
@@ -35,16 +41,25 @@ MAX_FILE_SIZE = 1_000_000_000  # 1 GB
 
 @contextmanager
 def time_limit(seconds: int):
-    def handler(signum, frame):
-        raise TimeoutError("Operation timed out")
+    """Context manager to timeout long operations cross-platform."""
+    if platform.system() == "Windows":
+        timer = threading.Timer(seconds, lambda: (_ for _ in ()).throw(TimeoutError("Operation timed out")))
+        timer.start()
+        try:
+            yield
+        finally:
+            timer.cancel()
+    else:
+        def handler(signum, frame):
+            raise TimeoutError("Operation timed out")
 
-    original = signal.signal(signal.SIGALRM, handler)
-    signal.alarm(seconds)
-    try:
-        yield
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, original)
+        original = signal.signal(signal.SIGALRM, handler)
+        signal.alarm(seconds)
+        try:
+            yield
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, original)
 
 
 def find_grib_files(directory: str) -> List[str]:
@@ -72,11 +87,21 @@ def inspect_file(path: str) -> Dict[str, object]:
     if size > MAX_FILE_SIZE:
         return info
 
-    with time_limit(30):
-        ds = xr.open_dataset(path, engine="cfgrib", backend_kwargs={"errors": "ignore"})
-        info["dimensions"] = dict(ds.dims)
-        info["variables"] = list(ds.data_vars)
-        ds.close()
+    if xr is None:
+        info["error"] = "xarray not available"
+        info["valid"] = False
+        return info
+
+    try:
+        with time_limit(30):
+            ds = xr.open_dataset(path, engine="cfgrib", backend_kwargs={"errors": "ignore"})
+            info["dimensions"] = dict(ds.dims)
+            info["variables"] = list(ds.data_vars)
+            info["valid"] = verify_dataset(ds)
+            ds.close()
+    except Exception as exc:
+        info["error"] = str(exc)
+        info["valid"] = False
     return info
 
 

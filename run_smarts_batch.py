@@ -30,6 +30,9 @@ class BatchConfig:
         except Exception:
             return False
 
+    def ensure_dirs(self) -> bool:
+        return ensure_directory(self.inp_dir) and ensure_directory(self.out_dir)
+
 
 # === USER CONFIG (overridden by CLI) ===
 def parse_args():
@@ -57,6 +60,19 @@ def parse_args():
         help="Timeout in seconds for each SMARTS process",
     )
     return parser.parse_args()
+
+
+def ensure_directory(path: Path) -> bool:
+    """Create directory if it doesn't exist and check write permission."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        print(f"❌ Permission denied creating directory: {path}")
+        return False
+    if not os.access(path, os.W_OK):
+        print(f"❌ No write permission for directory: {path}")
+        return False
+    return True
 
 
 def validate_smarts_executable(exe_path):
@@ -292,7 +308,8 @@ def main():
         timeout=args.timeout,
     )
 
-    cfg.out_dir.mkdir(parents=True, exist_ok=True)
+    if not ensure_directory(cfg.inp_dir) or not ensure_directory(cfg.out_dir):
+        return
 
     inp_files = list(cfg.inp_dir.glob("*.inp"))
     if not inp_files:

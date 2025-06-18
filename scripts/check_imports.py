@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 from packaging.requirements import Requirement
 from packaging.version import Version
+from packaging.requirements import InvalidRequirement
 try:
     from importlib.metadata import (
         version as get_version,
@@ -32,11 +33,18 @@ for line in req_file.read_text().splitlines():
     pkg = line.strip()
     if not pkg or pkg.startswith("#"):
         continue
-    req = Requirement(pkg)
+    try:
+        req = Requirement(pkg)
+    except InvalidRequirement as exc:
+        failures.append((pkg, f"Invalid requirement: {exc}"))
+        continue
     name = req.name
     mod_name = IMPORT_MAPPING.get(name, name.replace("-", "_"))
     try:
-        import_module(mod_name)
+        mod = import_module(mod_name)
+        # detect circular import if module spec is missing
+        if getattr(mod, "__spec__", None) is None:
+            raise ImportError("circular dependency detected")
     except Exception as exc:
         if name in OPTIONAL:
             missing_optional.append((mod_name, exc))
