@@ -352,10 +352,14 @@ with st.sidebar:
         ["Custom", "Standard RC", "High-Performance RC", "Selective Emitter"],
         help="Choose a preset or select 'Custom' for manual input"
     )
-    
+
+    # Set default emissivity and absorptivity values
+    epsilon = 0.92  # pylint: disable=invalid-name
+    alpha = 0.85  # pylint: disable=invalid-name
+
     if material_preset == "Custom":
         epsilon = st.slider(
-            "Emissivity (ε)", 
+            "Emissivity (ε)",
             0.70, 1.00, 0.92, 0.01,
             help="IR emissivity for radiative cooling"
         )
