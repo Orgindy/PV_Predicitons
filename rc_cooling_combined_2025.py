@@ -169,7 +169,8 @@ def add_effective_albedo_optimized(chunk, grib_path):
         return chunk
     
     # Group by unique time values to reduce GRIB file operations
-    unique_times = chunk['time'].dropna().dt.floor('H').unique()  # Round to hourly
+    # Use lower-case "h" to avoid pandas deprecation warning
+    unique_times = chunk['time'].dropna().dt.floor('h').unique()  # Round to hourly
     
     if len(unique_times) == 0:
         chunk['effective_albedo'] = DEFAULT_RHO
@@ -192,7 +193,8 @@ def add_effective_albedo_optimized(chunk, grib_path):
     
     # Apply cached values efficiently
     def get_albedo(row):
-        time_key = pd.to_datetime(row['time']).floor('H') if pd.notnull(row['time']) else None
+        # Use lower-case "h" to avoid pandas deprecation warning
+        time_key = pd.to_datetime(row['time']).floor('h') if pd.notnull(row['time']) else None
         if time_key in albedo_cache and albedo_cache[time_key] is not None:
             try:
                 albedo_data = albedo_cache[time_key]
