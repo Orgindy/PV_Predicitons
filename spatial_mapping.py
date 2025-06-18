@@ -102,65 +102,7 @@ def export_geojson(df, output_path='results/maps/final_clustered_map.geojson',
     gdf.to_file(output_path, driver='GeoJSON')
     print(f"📤 Exported GeoJSON to: {output_path}")
 
-def calculate_pv_potential(GHI, T_air, RC_potential, Red_band, Total_band):
-    """
-    Calculate PV potential with proper error handling and validation.
-    
-    Parameters:
-    - GHI: Global Horizontal Irradiance [W/m²]
-    - T_air: Air Temperature [°C]
-    - RC_potential: Radiative Cooling Potential [W/m²]
-    - Red_band: Red band irradiance [W/m²]
-    - Total_band: Total band irradiance [W/m²]
-    
-    Returns:
-    - PV_Potential [W/m²]
-    """
-    # Convert inputs to numpy arrays and handle NaN values
-    GHI = np.array(GHI, dtype=float)
-    T_air = np.array(T_air, dtype=float)
-    RC_potential = np.array(RC_potential, dtype=float)
-    Red_band = np.array(Red_band, dtype=float)
-    Total_band = np.array(Total_band, dtype=float)
-    
-    # Validate inputs and warn if outside expected ranges
-    if np.any(GHI < 0) or np.any(GHI > 1500):
-        print("⚠️ Warning: GHI values outside expected range (0-1500 W/m²)")
-        GHI = np.clip(GHI, 0, 1500)
-    
-    if np.any(T_air < -50) or np.any(T_air > 60):
-        print("⚠️ Warning: Temperature values outside expected range (-50 to 60°C)")
-        T_air = np.clip(T_air, -50, 60)
-    
-    if np.any(RC_potential < -100) or np.any(RC_potential > 300):
-        print("⚠️ Warning: RC potential values outside expected range (-100 to 300 W/m²)")
-        RC_potential = np.clip(RC_potential, -100, 300)
-
-    # Constants
-    NOCT = 45  # °C
-    Reference_Red_Fraction = 0.42
-    PR_ref = 0.80
-
-    # Calculate with proper error handling
-    T_cell = T_air + (NOCT - 20) / 800 * GHI
-    Temp_Loss = -0.0045 * (T_cell - 25)
-    RC_Gain = 0.01 * (RC_potential / 50)
-
-    # Safe division for spectral adjustment with better fallback
-    with np.errstate(divide='ignore', invalid='ignore'):
-        Actual_Red_Fraction = np.divide(Red_band, Total_band, 
-                                      out=np.full_like(Red_band, Reference_Red_Fraction), 
-                                      where=(Total_band != 0) & (~np.isnan(Total_band)))
-
-    Spectral_Adjust = (Actual_Red_Fraction - Reference_Red_Fraction)
-    PR_corrected = np.clip(PR_ref + Temp_Loss + RC_Gain + Spectral_Adjust, 0.7, 0.9)
-
-    PV_Potential = GHI * PR_corrected
-    
-    # Handle NaN values in output
-    PV_Potential = np.where(np.isnan(PV_Potential), 0, PV_Potential)
-    
-    return PV_Potential
+from pv_potential import calculate_pv_potential
 
 def prepare_features_for_ml(df):
     # Check if PV_Potential exists, if not, calculate it
