@@ -7,7 +7,10 @@ from importlib import import_module
 from packaging.requirements import Requirement
 from pathlib import Path
 
+from config import AppConfig
 from utils.resource_monitor import ResourceMonitor
+from utils.file_operations import SafeFileOps
+from utils.errors import ErrorAggregator, ProcessingError
 
 # Import pipeline functions from the clustering module
 from clustering import (
@@ -100,13 +103,9 @@ def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
     os.makedirs("results", exist_ok=True)
     os.makedirs("results/maps", exist_ok=True)
 
-    if not ResourceMonitor.check_memory_usage():
-        logging.error("Insufficient memory")
-        return None
-    stats = ResourceMonitor.get_memory_stats()
-    logging.info(
-        f"Memory usage: {stats['percent_used']:.1f}% of {stats['total_gb']:.1f} GB"
-    )
+    resources = ResourceMonitor.check_system_resources()
+    if not all(resources.values()):
+        raise ProcessingError("Insufficient system resources", resources)
 
     if db_url:
         from database_utils import read_table, write_dataframe
@@ -276,6 +275,10 @@ def main():
     """Main execution function with error handling and options."""
 
     args = parse_args()
+    config = AppConfig.from_env()
+    if error := config.validate():
+        raise ValueError(f"Invalid configuration: {error}")
+    error_aggregator = ErrorAggregator()
     if not validate_environment(args):
         return
     req_file = Path(__file__).resolve().parent / "requirements.txt"
@@ -286,6 +289,9 @@ def main():
 
     # Ensure output directories exist
     os.makedirs("data", exist_ok=True)
+    resources = ResourceMonitor.check_system_resources()
+    if not all(resources.values()):
+        raise ProcessingError("Insufficient system resources", resources)
     os.makedirs("results/maps", exist_ok=True)
 
     logging.info(f"🚀 Starting RC-PV pipeline in '{mode}' mode")
@@ -375,3 +381,5 @@ if __name__ == "__main__":
         logging.info(f"⏱️ Total runtime: {runtime}")
         logging.info("🏁 PIPELINE FINISHED")
         logging.info("=" * 50)
+        with SafeFileOps.atomic_write(Path("output.txt")) as f:
+            f.write("Processing complete")
