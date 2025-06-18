@@ -104,8 +104,10 @@ These tiny files contain only a couple of rows so the commands complete very qui
 
 ## Running Tests
 Unit tests rely on the packages listed in `requirements.txt`. **Always install
-these dependencies before running `pytest`.** You can install them manually or
-use the helper script:
+these dependencies before running `pytest`** using either `pip install -r
+requirements.txt` or `bash scripts/setup_env.sh`. Missing packages will cause
+`pytest` to fail with import errors. You can install them manually or use the
+helper script:
 
 ```bash
 pip install -r requirements.txt
