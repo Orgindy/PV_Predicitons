@@ -19,6 +19,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import glob
 from scipy import integrate
 import logging
+from plot_utils import apply_standard_plot_style, save_figure
 
 logging.basicConfig(level=logging.INFO)
 
@@ -449,30 +450,29 @@ def plot_spectral_irradiance(
     for col in irradiance_cols:
         ax.plot(df[wavelength_col], df[col], label=col)
 
-    # Set plot properties
     if title:
-        ax.set_title(title)
+        plot_title = title
     else:
-        # Extract location and date if available
         location = (
             df["location_id"].iloc[0] if "location_id" in df.columns else "Unknown"
         )
         date_time = df["date_time"].iloc[0] if "date_time" in df.columns else "Unknown"
-        ax.set_title(f"Spectral Irradiance - {location} - {date_time}")
-
-    ax.set_xlabel("Wavelength (nm)")
-    ax.set_ylabel("Spectral Irradiance (W/m²/nm)")
+        plot_title = f"Spectral Irradiance - {location} - {date_time}"
 
     if log_scale:
         ax.set_yscale("log")
 
-    ax.grid(True, alpha=0.3)
     ax.legend(loc="upper right")
 
     # Set reasonable x-axis limits
     ax.set_xlim(min(df[wavelength_col]), min(4000, max(df[wavelength_col])))
 
-    plt.tight_layout()
+    apply_standard_plot_style(
+        ax,
+        title=plot_title,
+        xlabel="Wavelength (nm)",
+        ylabel="Spectral Irradiance (W/m²/nm)",
+    )
     return fig
 
 
@@ -578,24 +578,23 @@ def create_spectral_composition_plots(band_df, output_dir):
                     bottom += plot_df[band].values
 
             # Set plot properties
-            ax.set_title(f"Spectral Composition - {location} - {irradiance_type}")
-            ax.set_xlabel("Date/Time")
-            ax.set_ylabel("Normalized Fraction")
             ax.set_ylim(0, 1)
 
             # Format x-axis labels if they're datetime strings
             plt.xticks(rotation=45, ha="right")
 
             ax.legend(title="Spectral Band", bbox_to_anchor=(1.05, 1), loc="upper left")
-            ax.grid(True, alpha=0.3)
 
-            plt.tight_layout()
+            apply_standard_plot_style(
+                ax,
+                title=f"Spectral Composition - {location} - {irradiance_type}",
+                xlabel="Date/Time",
+                ylabel="Normalized Fraction",
+            )
 
-            # Save the plot
             filename = f"spectral_composition_{location}_{irradiance_type}.png"
             filepath = os.path.join(output_dir, filename)
-            plt.savefig(filepath, dpi=150, bbox_inches="tight")
-            plt.close(fig)
+            save_figure(fig, filename, folder=output_dir)
 
             created_files.append(filepath)
 
@@ -660,18 +659,16 @@ def plot_location_comparison(
     cmap = "YlOrRd" if band_name in ["UV", "FIR"] else "viridis"
     sns.heatmap(pivot, cmap=cmap, annot=True, fmt=".3f", linewidths=0.5, ax=ax)
 
-    # Set plot properties
-    ax.set_title(f"{band_name} Band - {irradiance_type}")
-    ax.set_ylabel("Location")
-    ax.set_xlabel("Date/Time")
+    apply_standard_plot_style(
+        ax,
+        title=f"{band_name} Band - {irradiance_type}",
+        xlabel="Date/Time",
+        ylabel="Location",
+    )
 
-    plt.tight_layout()
-
-    # Save the plot
     filename = f"{band_name}_{irradiance_type}_location_comparison.png"
     filepath = os.path.join(output_dir, filename)
-    plt.savefig(filepath, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    save_figure(fig, filename, folder=output_dir)
 
     return filepath
 
@@ -743,26 +740,25 @@ def plot_temporal_variation(band_df, location_id, band_name, output_dir):
                 label=f"{band}",
             )
 
-        # Set plot properties
-        ax.set_title(f"{irradiance_type} - {location_id}")
-        ax.set_ylabel("Irradiance (W/m²)")
-
         # Format x-axis labels
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
         ax.legend(title="Band")
-        ax.grid(True, alpha=0.3)
+
+        apply_standard_plot_style(
+            ax,
+            title=f"{irradiance_type} - {location_id}",
+            ylabel="Irradiance (W/m²)",
+        )
 
     axes[-1].set_xlabel("Date/Time")
-
-    plt.tight_layout()
+    apply_standard_plot_style(axes[-1])
 
     # Save the plot
     band_str = "all_bands" if band_name.lower() == "all" else band_name
     filename = f"temporal_variation_{location_id}_{band_str}.png"
     filepath = os.path.join(output_dir, filename)
-    plt.savefig(filepath, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    save_figure(fig, filename, folder=output_dir)
 
     return filepath
 
@@ -874,21 +870,15 @@ def plot_band_ratios(band_df, output_dir, location_id=None, date_time=None):
                 title = f"{ratio_name} Ratio - {irradiance_type}"
                 x_label = "Location" if location_id is None else "Date/Time"
 
-            # Set plot properties
-            ax.set_title(title)
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(ratio_name)
-            ax.grid(True, alpha=0.3)
+            apply_standard_plot_style(
+                ax, title=title, xlabel=x_label, ylabel=ratio_name
+            )
 
-            plt.tight_layout()
-
-            # Save the plot
             loc_str = f"{location_id}_" if location_id is not None else ""
             time_str = f"{date_time}_" if date_time is not None else ""
             filename = f"band_ratio_{loc_str}{time_str}{ratio_name.replace('/', '_')}_{irradiance_type}.png"
             filepath = os.path.join(output_dir, filename)
-            plt.savefig(filepath, dpi=150, bbox_inches="tight")
-            plt.close(fig)
+            save_figure(fig, filename, folder=output_dir)
 
             created_files.append(filepath)
 

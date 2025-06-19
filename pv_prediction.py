@@ -12,6 +12,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import contextily as ctx
+from plot_utils import apply_standard_plot_style, save_figure
 import glob
 from pathlib import Path
 import joblib
@@ -134,13 +135,17 @@ def train_random_forest(X_scaled, y, feature_names, test_size=0.2, random_state=
         'Importance': model.feature_importances_
     }).sort_values(by='Importance', ascending=False)
 
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
-    plt.title("Feature Importance (Random Forest)")
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(x='Importance', y='Feature', data=feature_importance_df, ax=ax)
+    apply_standard_plot_style(
+        ax,
+        title="Feature Importance (Random Forest)",
+        xlabel="Importance",
+        ylabel="Feature",
+    )
 
     if output_plot:
-        plt.savefig(output_plot, dpi=300)
+        save_figure(fig, os.path.basename(output_plot), folder=os.path.dirname(output_plot) or '.')
         logging.info(f"📊 Feature importance plot saved to: {output_plot}")
     else:
         plt.show()
@@ -317,9 +322,8 @@ def plot_clusters_map(df, lat_col='latitude', lon_col='longitude', cluster_col='
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
     except Exception:
         logging.warning("Basemap could not be loaded.")
-    ax.set_title(title)
     ax.set_axis_off()
-    plt.tight_layout()
+    apply_standard_plot_style(ax, title=title)
     plt.show()
 
 
@@ -570,12 +574,15 @@ def summarize_and_plot_multi_year_clusters(summary_df, output_dir='results/clust
 
     # Plot best technology frequency per year
     tech_freq = summary_df.groupby(['Year', 'Best_Technology']).size().reset_index(name='Count')
-    plt.figure(figsize=(10, 6))
-    sns.barplot(data=tech_freq, x='Year', y='Count', hue='Best_Technology')
-    plt.title("Best PV Technology Frequency per Year")
-    plt.tight_layout()
-    plt.savefig(output_dir / 'tech_frequency_per_year.png')
-    plt.close()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=tech_freq, x='Year', y='Count', hue='Best_Technology', ax=ax)
+    apply_standard_plot_style(
+        ax,
+        title="Best PV Technology Frequency per Year",
+        xlabel="Year",
+        ylabel="Count",
+    )
+    save_figure(fig, 'tech_frequency_per_year.png', folder=output_dir)
 
     # Compute basic yearly averages per tech
     avg_scores = summary_df.groupby(['Year', 'Best_Technology']).mean(numeric_only=True).reset_index()
