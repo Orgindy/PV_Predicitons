@@ -3,7 +3,14 @@ import logging
 from clustering import main_matching_pipeline
 import pandas as pd
 from utils.feature_utils import save_config
-from config import get_path
+from config_utils import get_path
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 
 def multi_year_matching_pipeline(

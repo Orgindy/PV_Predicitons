@@ -2,6 +2,13 @@ import numpy as np
 from typing import Union, Tuple
 
 from constants import PV_CONSTANTS, PHYSICAL_LIMITS
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 
 def validate_temperature_coefficient(temp_coeff: float) -> float:

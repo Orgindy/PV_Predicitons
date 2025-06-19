@@ -2,7 +2,14 @@ import os
 import xarray as xr
 import json
 from pprint import pprint
-from config import get_nc_dir
+from config_utils import get_nc_dir
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 def show_metadata(nc_path: str):
     """

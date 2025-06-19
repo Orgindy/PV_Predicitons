@@ -5,9 +5,16 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import joblib
 import contextily as ctx
-from config import get_path
+from config_utils import get_path
 
 from utils.sky_temperature import calculate_sky_temperature_improved
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 def rc_only_clustering(df, features=None, n_clusters=5, cluster_col='RC_Cluster', model_path=None):
     """

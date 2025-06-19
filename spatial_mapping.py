@@ -8,10 +8,17 @@ import seaborn as sns
 import contextily as ctx
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from config import get_path
+from config_utils import get_path
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, silhouette_score
 from sklearn_extra.cluster import KMedoids
+
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
 
 def add_land_mask(df, lat_col='latitude', lon_col='longitude', world_shapefile='naturalearth_lowres'):
     """
@@ -115,8 +122,6 @@ def export_geojson(
     print(f"📤 Exported GeoJSON to: {output_path}")
 
 from pv_potential import calculate_pv_potential
-
-def prepare_features_for_ml(df):
     # Check if PV_Potential exists, if not, calculate it
     if 'PV_Potential' not in df.columns:
         print("📊 Calculating PV_Potential using improved physics model...")

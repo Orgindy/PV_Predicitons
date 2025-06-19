@@ -6,7 +6,14 @@ import shutil
 from tqdm import tqdm  # For progress bar
 import sys
 import cfgrib
-from config import get_nc_dir
+from config_utils import get_nc_dir
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

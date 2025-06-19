@@ -11,9 +11,16 @@ from scipy.constants import sigma as σ
 import joblib
 import os
 from sklearn.metrics import silhouette_score
-from config import get_path
+from config_utils import get_path
 
 from utils.sky_temperature import calculate_sky_temperature_improved
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 # Constants
 DEFAULT_ALBEDO = 0.3

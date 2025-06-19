@@ -7,7 +7,14 @@ Created on Mon May 26 12:21:06 2025
 import os
 import pandas as pd
 import numpy as np
-from config import get_path
+from config_utils import get_path
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 EMOJI_ENABLED = True
 

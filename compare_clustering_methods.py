@@ -8,9 +8,16 @@ from clustering_methods import run_kmeans, run_gmm, run_dbscan, run_agglomerativ
 from sklearn.preprocessing import StandardScaler
 import os
 import matplotlib.pyplot as plt
-from config import get_path
+from config_utils import get_path
 from plot_utils import apply_standard_plot_style, save_figure
 from sklearn.decomposition import PCA
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 def load_and_scale_data(csv_path, feature_columns):
     """Load and scale data using the provided feature columns."""

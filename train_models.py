@@ -4,7 +4,14 @@ from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 from pathlib import Path
-from config import TrainingConfig
+from config_utils import TrainingConfig
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 
 def validate_training_columns(data, features, target):

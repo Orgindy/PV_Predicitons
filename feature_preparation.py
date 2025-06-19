@@ -10,8 +10,15 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.feature_selection import mutual_info_regression
 import os
 import argparse
-from config import get_nc_dir, get_path
+from config_utils import get_nc_dir, get_path
 from utils.feature_utils import filter_valid_columns, compute_band_ratios
+
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
 
 
 def parse_args():
@@ -58,6 +65,7 @@ def parse_args():
 # 1. Physics-based PV potential function
 # --------------------------------------
 from pv_potential import calculate_pv_potential
+
 
 
 def map_netcdf_variables(df):
