@@ -12,6 +12,7 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+from plot_utils import apply_standard_plot_style, save_figure
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib.gridspec import GridSpec
@@ -92,7 +93,7 @@ def create_yearly_maps(yearly_df, output_dir, boundaries):
     df_year = yearly_df[yearly_df['year'] == latest_year]
     
     # Create a figure with two maps side by side
-    plt.figure(figsize=(18, 8))
+    fig = plt.figure(figsize=(18, 8))
     
     # Setup for both plots
     projection = ccrs.PlateCarree()
@@ -169,12 +170,12 @@ def create_yearly_maps(yearly_df, output_dir, boundaries):
     
     # Add overall title
     plt.suptitle(f'Annual Radiative Cooling Potential for Europe - {latest_year}', fontsize=16, y=0.98)
-    
-    # Adjust layout and save
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+    apply_standard_plot_style(ax1, grid=False)
+    apply_standard_plot_style(ax2, grid=False)
+
     output_file = os.path.join(output_dir, f'yearly_rc_potential_{latest_year}.{OUTPUT_FORMAT}')
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    plt.close()
+    save_figure(fig, os.path.basename(output_file), folder=output_dir)
 
     print(f"Saved yearly map to: {output_file}")
 
@@ -278,15 +279,16 @@ def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
     plt.suptitle(f'Seasonal {variable_label} Radiative Cooling Potential for Europe - {latest_year}', 
                  fontsize=16, y=0.98)
     
-    # Adjust layout and save
-    plt.tight_layout(rect=[0, 0, 0.9, 0.96])
+    for ax in fig.axes:
+        if ax is not cbar_ax:
+            apply_standard_plot_style(ax, grid=False)
+
     variable_str = "basic" if variable == "P_rc_basic" else "net"
     output_file = os.path.join(
         output_dir,
         f"seasonal_rc_potential_{variable_str}_{latest_year}.{OUTPUT_FORMAT}",
     )
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    plt.close()
+    save_figure(fig, os.path.basename(output_file), folder=output_dir)
 
     print(f"Saved seasonal {variable} map to: {output_file}")
 

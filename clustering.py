@@ -2,6 +2,7 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import contextily as ctx
+from plot_utils import apply_standard_plot_style, save_figure
 from sklearn_extra.cluster import KMedoids
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
@@ -242,13 +243,14 @@ def find_optimal_k(X_scaled, k_range=range(2, 11), random_state=42):
             logging.info(f"Failed for k = {k}: {e}")
     
     # Plotting
-    plt.figure(figsize=(8, 5))
-    plt.plot(list(scores.keys()), list(scores.values()), marker='o', linestyle='-')
-    plt.xlabel("Number of Clusters (k)")
-    plt.ylabel("Silhouette Score")
-    plt.title("Optimal Number of Clusters")
-    plt.grid(True)
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(list(scores.keys()), list(scores.values()), marker='o', linestyle='-')
+    apply_standard_plot_style(
+        ax,
+        title="Optimal Number of Clusters",
+        xlabel="Number of Clusters (k)",
+        ylabel="Silhouette Score",
+    )
     plt.show()
 
     best_k = max(scores, key=scores.get)
@@ -552,9 +554,10 @@ def plot_prediction_uncertainty_with_contours(
             cs = ax.contour(xi, yi, zi, levels=contour_levels, colors='black', linewidths=0.7)
             ax.clabel(cs, inline=1, fontsize=8, fmt=ticker.FuncFormatter(lambda x, _: f"{x:.2f}"))
 
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
+    apply_standard_plot_style(ax, title="Prediction Uncertainty Map", grid=True)
+    filename = os.path.basename(output_path)
+    folder = os.path.dirname(output_path)
+    save_figure(fig, filename, folder=folder)
     logging.info(f"✅ Saved uncertainty map with contours to {output_path}")
 
 def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col='longitude', cluster_col='Cluster_ID'):
@@ -619,13 +622,11 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
         except Exception as e:
             logging.info("⚠️ Basemap not available - continuing without")
 
-        ax.set_title("Best Matched PV Technology by Location", fontsize=15)
         ax.set_axis_off()
-        
-        # Save plot
+        apply_standard_plot_style(ax, title="Best Matched PV Technology by Location")
+
         os.makedirs("results/maps", exist_ok=True)
-        plt.savefig("results/maps/technology_matches.png", dpi=300, bbox_inches='tight')
-        plt.close()
+        save_figure(fig, "technology_matches.png", folder="results/maps")
         logging.info("✅ Technology matching map saved to results/maps/technology_matches.png")
         
     except Exception as e:
@@ -690,8 +691,8 @@ def plot_clusters_map(df_clustered, lat_col='latitude', lon_col='longitude',
     except Exception as e:
         logging.info("Basemap not loaded — offline mode.")
 
-    ax.set_title(title, fontsize=16)
     ax.set_axis_off()
+    apply_standard_plot_style(ax, title=title)
     plt.show()
 
 def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', output_path='results/maps/prediction_uncertainty_map.png'):
@@ -720,11 +721,11 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
     except Exception as e:
         logging.info("Basemap not loaded — offline mode.")
 
-    ax.set_title("Random Forest Prediction Uncertainty Map", fontsize=14)
     ax.set_axis_off()
-    plt.tight_layout()
-    plt.savefig(output_path)
-    plt.close()
+    apply_standard_plot_style(ax, title="Random Forest Prediction Uncertainty Map")
+    filename = os.path.basename(output_path)
+    folder = os.path.dirname(output_path)
+    save_figure(fig, filename, folder=folder)
     logging.info(f"🖼️ Saved prediction uncertainty map to: {output_path}")
 
 
@@ -770,11 +771,11 @@ def plot_clusters_with_kg(df, kg_raster='DATASET/kg_classification.tif', lat_col
         gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[lon_col], df[lat_col]), crs='EPSG:4326')
         gdf = gdf.to_crs(src.crs)
         gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=30, edgecolor='black')
-        ax.set_title('Clusters with Köppen–Geiger Zones')
         ax.set_axis_off()
-        plt.tight_layout()
-        plt.savefig(output_path, dpi=300)
-        plt.close()
+        apply_standard_plot_style(ax, title='Clusters with Köppen–Geiger Zones')
+        filename = os.path.basename(output_path)
+        folder = os.path.dirname(output_path)
+        save_figure(fig, filename, folder=folder)
         logging.info(f"✅ Saved map with KG overlay to {output_path}")
 
 def main_matching_pipeline(
