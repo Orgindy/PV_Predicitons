@@ -36,30 +36,13 @@ class BatchConfig:
 
 # === USER CONFIG (overridden by CLI) ===
 def parse_args():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="Run SMARTS batch simulations")
-    parser.add_argument(
-        "--smarts-exe",
-        default="smarts295bat.exe",
-        help="Path to SMARTS executable",
+    """Return config-based arguments (CLI removed)."""
+    return argparse.Namespace(
+        smarts_exe="smarts295bat.exe",
+        inp_dir="smarts_inp_files",
+        out_dir="smarts_out_files",
+        timeout=300,
     )
-    parser.add_argument(
-        "--inp-dir",
-        default="smarts_inp_files",
-        help="Directory containing SMARTS input files",
-    )
-    parser.add_argument(
-        "--out-dir",
-        default="smarts_out_files",
-        help="Directory for SMARTS output files",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=int,
-        default=300,
-        help="Timeout in seconds for each SMARTS process",
-    )
-    return parser.parse_args()
 
 
 def ensure_directory(path: Path) -> bool:
@@ -90,12 +73,16 @@ def validate_smarts_executable(exe_path):
 
 
 def run_smarts_process(cfg: BatchConfig, input_file: Path) -> bool:
-    """Run a single SMARTS simulation"""
+    """Run a single SMARTS simulation with error handling."""
     command = f"{cfg.smarts_exe} {input_file}"
     try:
         subprocess.run(command, check=True, shell=True, timeout=cfg.timeout)
+        logging.info("✅ %s", input_file.name)
         return True
-    except Exception:
+    except Exception as exc:
+        logging.warning("SMARTS failed for %s: %s", input_file.name, exc)
+        with open("smarts_batch_errors.log", "a") as log:
+            log.write(f"{input_file}\n{exc}\n")
         return False
 
 

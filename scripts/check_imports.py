@@ -3,6 +3,7 @@
 from importlib import import_module
 from pathlib import Path
 import sys
+import logging
 from packaging.requirements import Requirement
 from packaging.version import Version
 from packaging.requirements import InvalidRequirement
@@ -62,20 +63,20 @@ for line in req_file.read_text().splitlines():
         version_issues.append((name, installed_ver, str(req.specifier)))
 
 if missing_optional:
-    print("Optional packages missing or failed to import:")
+    logging.warning("Optional packages missing or failed to import:")
     for mod_name, exc in missing_optional:
-        print(f"  {mod_name}: {exc}")
+        logging.warning("  %s: %s", mod_name, exc)
 
 if version_issues:
-    print("Version mismatches:")
+    logging.warning("Version mismatches:")
     for name, inst, spec in version_issues:
-        print(f"  {name} {inst} does not satisfy {spec}")
+        logging.warning("  %s %s does not satisfy %s", name, inst, spec)
 
 if failures or version_issues:
     for mod_name, exc in failures:
-        print(f"{mod_name}: {exc}")
+        logging.error("%s: %s", mod_name, exc)
     for name, inst, spec in version_issues:
-        print(f"{name} {inst} does not satisfy {spec}")
+        logging.error("%s %s does not satisfy %s", name, inst, spec)
     sys.exit(1)
 else:
-    print("All required dependencies imported successfully.")
+    logging.info("All required dependencies imported successfully.")

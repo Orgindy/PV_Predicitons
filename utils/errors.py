@@ -33,6 +33,12 @@ class ResourceError(ProcessingError):
     pass
 
 
+class SynergyDatabaseError(ProcessingError):
+    """Database connection failures."""
+
+    pass
+
+
 class ErrorAggregator:
     """Collect and manage errors."""
 
