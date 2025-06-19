@@ -3,10 +3,17 @@ import time
 import subprocess
 from multiprocessing import Pool, cpu_count
 import argparse
-from config import get_path
+from config_utils import get_path
 from pathlib import Path
 from dataclasses import dataclass
 import psutil
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 
 @dataclass

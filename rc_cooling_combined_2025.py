@@ -7,7 +7,7 @@ import logging
 from typing import Tuple
 from sklearn.model_selection import train_test_split
 from pykrige.ok import OrdinaryKriging
-from config import get_nc_dir
+from config_utils import get_nc_dir
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -17,6 +17,13 @@ from sklearn_extra.cluster import KMedoids
 from sklearn.preprocessing import StandardScaler
 from humidity import compute_relative_humidity
 from utils.sky_temperature import calculate_sky_temperature_improved
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 # Setup logging
 logging.basicConfig(level=logging.INFO,

@@ -7,7 +7,7 @@ from importlib import import_module
 from packaging.requirements import Requirement
 from pathlib import Path
 
-from config import AppConfig, get_path
+from config_utils import AppConfig, get_path
 from utils.resource_monitor import ResourceMonitor
 from utils.file_operations import SafeFileOps
 from utils.errors import ErrorAggregator, ProcessingError
@@ -25,6 +25,13 @@ from clustering import (
 
 from sklearn.model_selection import train_test_split
 from train_models import train_all_models
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 
 def parse_args():

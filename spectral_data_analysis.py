@@ -18,9 +18,16 @@ import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 import glob
 from scipy import integrate
-from config import get_path
+from config_utils import get_path
 import logging
 from plot_utils import apply_standard_plot_style, save_figure
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 logging.basicConfig(level=logging.INFO)
 

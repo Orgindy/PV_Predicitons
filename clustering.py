@@ -12,12 +12,19 @@ import numpy as np
 from sklearn.cluster import KMeans
 from matplotlib import ticker
 from utils.feature_utils import compute_cluster_spectra
-from config import get_path
+from config_utils import get_path
 
 from shapely.geometry import Point
 import rasterio
 from rasterio.plot import show as rio_show
 from pyproj import Transformer
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 # Import humidity function
 try:
     from utils.humidity import compute_relative_humidity

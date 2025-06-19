@@ -18,7 +18,7 @@ Date: May 2025
 import os
 import argparse
 import logging
-from config import get_nc_dir
+from config_utils import get_nc_dir
 import gc
 import sys  # Add this import
 from datetime import datetime
@@ -27,6 +27,13 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import time 
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 # Set up logging
 logging.basicConfig(

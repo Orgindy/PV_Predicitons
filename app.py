@@ -4,13 +4,20 @@ import numpy as np
 import pandas as pd
 import argparse
 import os
-from config import get_path
+from config_utils import get_path
 from scipy.spatial import cKDTree
 import plotly.express as px
 import plotly.graph_objects as go
 import io
 import zipfile
 import warnings
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 warnings.filterwarnings('ignore')
 
 

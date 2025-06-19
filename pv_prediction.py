@@ -18,7 +18,7 @@ from pathlib import Path
 import joblib
 from datetime import datetime
 import os
-from config import get_path
+from config_utils import get_path
 from xgboost import XGBRegressor
 import logging
 
@@ -28,6 +28,13 @@ from utils.feature_utils import (
     compute_cluster_spectra,
 )
 from sklearn.gaussian_process.kernels import RBF
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 # -----------------------------
 # PV Cell Profile Management
@@ -72,7 +79,7 @@ def get_pv_cell_profiles():
     return pv_profiles
 
 
-from pv_potential import calculate_pv_potential
+
 
 
 def prepare_features_for_ml(df):

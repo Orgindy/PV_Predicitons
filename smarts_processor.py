@@ -6,7 +6,14 @@ from datetime import datetime
 import netCDF4 as nc
 import glob
 import argparse
-from config import get_path
+from config_utils import get_path
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 def extract_metadata(out_file_content):
     """Extract metadata from the SMARTS .out.txt file"""

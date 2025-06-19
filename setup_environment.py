@@ -1,7 +1,14 @@
 import os
 import logging
 from pathlib import Path
-from config import get_path
+from config_utils import get_path
+import yaml
+try:
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    config = {}
+
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
