@@ -3,11 +3,12 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import joblib
 import contextily as ctx
 
 from utils.sky_temperature import calculate_sky_temperature_improved
 
-def rc_only_clustering(df, features=None, n_clusters=5, cluster_col='RC_Cluster'):
+def rc_only_clustering(df, features=None, n_clusters=5, cluster_col='RC_Cluster', model_path=None):
     """
     Perform K-Medoids clustering based on RC potential and thermal features.
 
@@ -30,12 +31,21 @@ def rc_only_clustering(df, features=None, n_clusters=5, cluster_col='RC_Cluster'
 
     model = KMedoids(n_clusters=n_clusters, random_state=42, metric='euclidean', init='k-medoids++')
     labels = model.fit_predict(X_scaled)
+    try:
+        score = silhouette_score(X_scaled, labels)
+    except Exception:
+        score = None
+    if score is not None:
+        print(f"Silhouette score: {score:.3f}")
+    if model_path:
+        joblib.dump(model, model_path)
+        print(f"Model saved to {model_path}")
 
     df_out = df.copy()
     df_out[cluster_col] = -1
     df_out.loc[df_subset.index, cluster_col] = labels
 
-    return df_out, model
+    return df_out, model, score
 
 def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology',
                               lat_col='latitude', lon_col='longitude',

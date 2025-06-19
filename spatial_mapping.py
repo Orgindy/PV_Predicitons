@@ -53,6 +53,8 @@ def overlay_technology_matches(geo_df, tech_col='Best_Technology', cluster_col='
     """
     if not isinstance(geo_df, gpd.GeoDataFrame):
         raise ValueError("Input must be a GeoDataFrame with geometry column.")
+    if geo_df.crs is None or geo_df.crs.to_epsg() != 4326:
+        raise ValueError("GeoDataFrame must use geographic CRS EPSG:4326")
 
     geo_df = geo_df.to_crs(epsg=3857)  # Web Mercator for plotting with basemaps
 

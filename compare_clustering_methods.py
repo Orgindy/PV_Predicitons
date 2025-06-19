@@ -1,6 +1,7 @@
 # compare_clustering_methods.py
 # Purpose: Evaluate and compare multiple clustering methods on the dataset
 
+import argparse
 import pandas as pd
 import numpy as np
 from clustering_methods import run_kmeans, run_gmm, run_dbscan, run_agglomerative
@@ -36,6 +37,11 @@ def apply_and_store(df, X, method_name, method_func, **kwargs):
         return (method_name, None)
 
 def main():
+    parser = argparse.ArgumentParser(description="Compare clustering methods")
+    parser.add_argument("--k", type=int, default=5, help="Number of clusters")
+    args = parser.parse_args()
+
+    n_clusters = args.k
     input_csv = "clustered_dataset.csv"
     output_csv = "clustered_dataset_with_methods.csv"
     score_log = "clustering_scores.csv"
@@ -94,13 +100,13 @@ def main():
     print("\n=== Running Clustering Methods ===")
     
     try:
-        scores.append(apply_and_store(df, X, "kmeans", run_kmeans, n_clusters=5))
+        scores.append(apply_and_store(df, X, "kmeans", run_kmeans, n_clusters=n_clusters))
     except Exception as e:
         print(f"❌ KMeans failed: {e}")
         scores.append(("kmeans", None))
     
     try:
-        scores.append(apply_and_store(df, X, "gmm", run_gmm, n_clusters=5))
+        scores.append(apply_and_store(df, X, "gmm", run_gmm, n_clusters=n_clusters))
     except Exception as e:
         print(f"❌ GMM failed: {e}")
         scores.append(("gmm", None))
@@ -112,7 +118,7 @@ def main():
         scores.append(("dbscan", None))
     
     try:
-        scores.append(apply_and_store(df, X, "agglomerative", run_agglomerative, n_clusters=5))
+        scores.append(apply_and_store(df, X, "agglomerative", run_agglomerative, n_clusters=n_clusters))
     except Exception as e:
         print(f"❌ Agglomerative failed: {e}")
         scores.append(("agglomerative", None))

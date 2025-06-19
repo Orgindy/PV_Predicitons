@@ -86,6 +86,7 @@ def compute_temperature_series(
                 dynamic_config = material_config.copy()
                 dynamic_config["alpha_solar"] = props["alpha"]
                 dynamic_config["epsilon_IR"] = props["emissivity"]
+                print(f"Layer emissivity: {dynamic_config['epsilon_IR']}, absorptivity: {dynamic_config['alpha_solar']}")
                 
                 config_to_use = dynamic_config
             except ImportError:
@@ -93,6 +94,7 @@ def compute_temperature_series(
                 config_to_use = material_config
         else:
             config_to_use = material_config
+            print(f"Layer emissivity: {config_to_use['epsilon_IR']}, absorptivity: {config_to_use['alpha_solar']}")
 
         try:
             T_surf = solve_surface_temperature(

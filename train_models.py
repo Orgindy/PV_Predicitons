@@ -7,6 +7,13 @@ from pathlib import Path
 from config import TrainingConfig
 
 
+def validate_training_columns(data, features, target):
+    """Ensure that all feature and target columns exist in the DataFrame."""
+    missing = [c for c in features + [target] if c not in data.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+
 def train_all_models(X_train, X_test, y_train, y_test):
     """Train multiple regression models and compute an ensemble.
 
