@@ -492,8 +492,7 @@ def main():
     
     # Step 0: Check dependencies
     if not check_dependencies():
-        logger.error("Missing required dependencies. Exiting.")
-        sys.exit(1)
+        logger.error("Missing required dependencies. Continuing without.")
     
     # Step 1: Convert all GRIB files to NetCDF
     netcdf_files = convert_all_grib_files(GRIB_FOLDER, NETCDF_OUTPUT_FOLDER)
@@ -510,10 +509,10 @@ def main():
             logger.info(f"Number of original files processed: {len(netcdf_files)}")
         else:
             logger.error("Failed to merge NetCDF files")
-            sys.exit(1)
+            return
     else:
         logger.error("No NetCDF files were created, cannot merge")
-        sys.exit(1)
+        return
         
     # Step 3: Clean up if requested (commented out by default)
     # Un-comment these lines if you want to remove individual NetCDF files after merging

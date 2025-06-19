@@ -1,5 +1,6 @@
 import os
 import logging
+import warnings
 import pandas as pd
 from sqlalchemy import create_engine
 
@@ -31,7 +32,10 @@ def get_engine(db_url: str = None):
         return create_engine(url)
     except Exception as exc:
         logging.warning("Failed to create engine: %s", exc)
-        raise SynergyDatabaseError("Engine creation failed", {"url": url}) from exc
+        warnings.warn(
+            "Database engine creation failed; returning None", stacklevel=2
+        )
+        return None
 
 def read_table(table_name: str, db_url: str = None):
     """Load an entire table into a :class:`pandas.DataFrame`.
