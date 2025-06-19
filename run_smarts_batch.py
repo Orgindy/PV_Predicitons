@@ -3,6 +3,7 @@ import time
 import subprocess
 from multiprocessing import Pool, cpu_count
 import argparse
+from config import get_path
 from pathlib import Path
 from dataclasses import dataclass
 import psutil
@@ -39,8 +40,8 @@ def parse_args():
     """Return config-based arguments (CLI removed)."""
     return argparse.Namespace(
         smarts_exe="smarts295bat.exe",
-        inp_dir="smarts_inp_files",
-        out_dir="smarts_out_files",
+        inp_dir=get_path("smarts_inp_path"),
+        out_dir=get_path("smarts_out_path"),
         timeout=300,
     )
 

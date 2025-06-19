@@ -18,6 +18,7 @@ from pathlib import Path
 import joblib
 from datetime import datetime
 import os
+from config import get_path
 from xgboost import XGBRegressor
 import logging
 
@@ -97,9 +98,18 @@ def prepare_features_for_ml(df):
     return X_scaled, y, list(X.columns), scaler
 
 
-def train_random_forest(X_scaled, y, feature_names, test_size=0.2, random_state=42,
-                        n_estimators=200, max_depth=12, n_clusters=5,
-                        output_plot=None, model_dir="results/models"):
+def train_random_forest(
+    X_scaled,
+    y,
+    feature_names,
+    test_size=0.2,
+    random_state=42,
+    n_estimators=200,
+    max_depth=12,
+    n_clusters=5,
+    output_plot=None,
+    model_dir=os.path.join(get_path("results_path"), "models"),
+):
     """
     Train a Random Forest model and save the model and feature importance plot.
 
@@ -345,7 +355,7 @@ def prepare_features_for_clustering(df, feature_cols):
     return X_scaled, df_features.index
 
 
-def main_clustering_pipeline(input_file='merged_dataset.csv', output_dir='results', n_clusters=5):
+def main_clustering_pipeline(input_file=get_path('merged_data_path'), output_dir=get_path('results_path'), n_clusters=5):
     if not os.path.isfile(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")
     df = pd.read_csv(input_file)
@@ -440,7 +450,12 @@ def main_clustering_pipeline(input_file='merged_dataset.csv', output_dir='result
 
     return df_clustered
 
-def multi_year_clustering(input_dir='.', output_dir='clustered_outputs', n_clusters=5, file_pattern='merged_dataset_*.csv'):
+def multi_year_clustering(
+    input_dir='.',
+    output_dir=os.path.join(get_path('results_path'), 'clustered_outputs'),
+    n_clusters=5,
+    file_pattern='merged_dataset_*.csv',
+):
     """
     Run main_clustering_pipeline across multiple years of merged datasets.
 
@@ -561,7 +576,7 @@ def generate_zone_descriptions(df, cluster_col='Cluster_ID'):
     return grouped[['Zone_Description']]
 
 
-def summarize_and_plot_multi_year_clusters(summary_df, output_dir='results/clusters'):
+def summarize_and_plot_multi_year_clusters(summary_df, output_dir=os.path.join(get_path('results_path'), 'clusters')):
     """
     Generate seasonal + yearly summaries and cluster maps.
     Saves summary CSVs and plots per year.
@@ -610,8 +625,8 @@ def rc_only_clustering(df, n_clusters=5):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Run PV prediction pipeline")
-    parser.add_argument("--input-dir", default="data/merged_years")
-    parser.add_argument("--output-dir", default="results/clusters")
+    parser.add_argument("--input-dir", default=os.path.join(get_path("results_path"), "merged_years"))
+    parser.add_argument("--output-dir", default=os.path.join(get_path("results_path"), "clusters"))
     parser.add_argument("--n-clusters", type=int, default=5)
     parser.add_argument("--file-pattern", default="merged_dataset_*.csv")
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))

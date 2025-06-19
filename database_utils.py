@@ -25,8 +25,8 @@ def get_engine(db_url: str = None):
     if url.startswith("sqlite:///"):
         path = url.replace("sqlite:///", "")
         if not os.path.exists(path):
-            logging.warning("SQLite database file not found: %s", path)
-            raise SynergyDatabaseError("SQLite file does not exist", {"path": path})
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            open(path, "a").close()
     try:
         return create_engine(url)
     except Exception as exc:

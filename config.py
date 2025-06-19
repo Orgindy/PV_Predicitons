@@ -4,6 +4,27 @@ import os
 import yaml
 from typing import Dict, Any, Optional
 
+CONFIG_FILE = Path(__file__).with_name("config.yaml")
+
+
+def load_config(path: Path = CONFIG_FILE) -> Dict[str, Any]:
+    """Load configuration values from a YAML file."""
+    if not path.exists():
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except (OSError, yaml.YAMLError):
+        return {}
+
+
+CONFIG = load_config()
+
+
+def get_path(key: str, default: Optional[str] = None) -> Optional[str]:
+    """Return a configured path by key."""
+    return CONFIG.get(key, default)
+
 @dataclass
 class AppConfig:
     """Application configuration."""
@@ -75,14 +96,4 @@ def get_nc_dir() -> str:
     if env_dir:
         return env_dir
 
-    config_path = Path(__file__).with_name("config.yaml")
-    if config_path.exists():
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            if isinstance(data, Dict) and data.get("nc_data_dir"):
-                return str(data["nc_data_dir"])
-        except (OSError, yaml.YAMLError) as e:
-            print(f"Warning: could not read {config_path}: {e}")
-
-    return "netcdf_files"
+    return get_path("era5_path", "netcdf_files")

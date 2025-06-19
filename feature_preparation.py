@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.feature_selection import mutual_info_regression
 import os
 import argparse
-from config import get_nc_dir
+from config import get_nc_dir, get_path
 from utils.feature_utils import filter_valid_columns, compute_band_ratios
 
 
@@ -19,17 +19,17 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Prepare features for PV model")
     parser.add_argument(
         "--input-file",
-        default="data/merged_dataset.csv",
+        default=get_path("merged_data_path"),
         help="Path to merged dataset CSV",
     )
     parser.add_argument(
         "--validated-file",
-        default="data/validated_dataset.csv",
+        default=os.path.join(get_path("results_path"), "validated_dataset.csv"),
         help="Path to save validated CSV",
     )
     parser.add_argument(
         "--physics-file",
-        default="data/physics_dataset.csv",
+        default=os.path.join(get_path("results_path"), "physics_dataset.csv"),
         help="Path to save dataset with physics-based PV potential",
     )
     parser.add_argument(
@@ -39,7 +39,7 @@ def parse_args():
     )
     parser.add_argument(
         "--results-dir",
-        default="results",
+        default=get_path("results_path"),
         help="Directory where results will be written",
     )
     parser.add_argument(
