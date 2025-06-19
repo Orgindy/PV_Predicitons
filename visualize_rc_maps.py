@@ -16,6 +16,8 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib.gridspec import GridSpec
 
+OUTPUT_FORMAT = os.getenv("MAP_FORMAT", "png")
+
 def load_data(yearly_file, seasonal_file):
     """
     Load yearly and seasonal data from CSV files.
@@ -157,13 +159,20 @@ def create_yearly_maps(yearly_df, output_dir, boundaries):
     ax2.set_title(f'Net Radiative Cooling Potential (P_rc_net) - {latest_year}', fontsize=12)
     cbar2 = plt.colorbar(sc2, ax=ax2, pad=0.01, shrink=0.8)
     cbar2.set_label('RC Potential (W/m²)', fontsize=10)
+
+    if 'Cluster_ID' in df_year.columns:
+        unique_clusters = sorted(df_year['Cluster_ID'].unique())
+        handles = [plt.Line2D([0], [0], marker='o', color='w',
+                               markerfacecolor=f'C{i%10}', label=str(c), markersize=6)
+                   for i, c in enumerate(unique_clusters)]
+        ax2.legend(handles=handles, title='Cluster', loc='lower left')
     
     # Add overall title
     plt.suptitle(f'Annual Radiative Cooling Potential for Europe - {latest_year}', fontsize=16, y=0.98)
     
     # Adjust layout and save
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    output_file = os.path.join(output_dir, f'yearly_rc_potential_{latest_year}.png')
+    output_file = os.path.join(output_dir, f'yearly_rc_potential_{latest_year}.{OUTPUT_FORMAT}')
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()
 
@@ -248,9 +257,16 @@ def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
         gl = ax.gridlines(draw_labels=True, linewidth=0.5, color='gray', alpha=0.5, linestyle='--')
         gl.top_labels = False
         gl.right_labels = False
-        
+
         # Add title
         ax.set_title(f'{season} {latest_year}', fontsize=12)
+
+        if 'Cluster_ID' in df_season.columns:
+            unique_clusters = sorted(df_season['Cluster_ID'].unique())
+            handles = [plt.Line2D([0], [0], marker='o', color='w',
+                                   markerfacecolor=f'C{i%10}', label=str(c), markersize=6)
+                       for i, c in enumerate(unique_clusters)]
+            ax.legend(handles=handles, title='Cluster', loc='lower left')
     
     # Add a colorbar that applies to all subplots
     cbar_ax = fig.add_axes([0.92, 0.3, 0.02, 0.4])
@@ -267,7 +283,7 @@ def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
     variable_str = "basic" if variable == "P_rc_basic" else "net"
     output_file = os.path.join(
         output_dir,
-        f"seasonal_rc_potential_{variable_str}_{latest_year}.png",
+        f"seasonal_rc_potential_{variable_str}_{latest_year}.{OUTPUT_FORMAT}",
     )
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()

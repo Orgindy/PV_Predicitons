@@ -25,6 +25,8 @@ from sklearn.gaussian_process.kernels import RBF
 # -----------------------------
 
 def load_pv_profiles_from_csv(file_path):
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"Profile file not found: {file_path}")
     df = pd.read_csv(file_path)
     profiles = {}
     for _, row in df.iterrows():
@@ -335,6 +337,8 @@ def prepare_features_for_clustering(df, feature_cols):
 
 
 def main_clustering_pipeline(input_file='merged_dataset.csv', output_dir='results', n_clusters=5):
+    if not os.path.isfile(input_file):
+        raise FileNotFoundError(f"Input file not found: {input_file}")
     df = pd.read_csv(input_file)
     print("Calculating physics-based PV Potential...")
     df['PV_Potential_physics'] = calculate_pv_potential(
@@ -467,6 +471,8 @@ def multi_year_clustering(input_dir='.', output_dir='clustered_outputs', n_clust
             )
     
         # Load and tag matched output
+        if not os.path.isfile(matched_out):
+            raise FileNotFoundError(f"Matched output not found: {matched_out}")
         match_df = pd.read_csv(matched_out)
         match_df['Year'] = year
         matched_tech_dfs.append(match_df)

@@ -51,6 +51,24 @@ class AppConfig:
         return None
 
 
+@dataclass
+class TrainingConfig:
+    """Paths for training datasets."""
+
+    train_features: str = "data/X_train.npy"
+    test_features: str = "data/X_test.npy"
+    train_target: str = "data/y_train.npy"
+    test_target: str = "data/y_test.npy"
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "TrainingConfig":
+        if not path.exists():
+            return cls()
+        with path.open("r") as f:
+            data = yaml.safe_load(f) or {}
+        return cls(**{**cls().__dict__, **data.get("training", {})})
+
+
 def get_nc_dir() -> str:
     """Return directory containing NetCDF files."""
     env_dir = os.getenv("NC_DATA_DIR")

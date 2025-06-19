@@ -90,7 +90,9 @@ def validate_parameters(input_file, output_file, drop_invalid=True):
     Returns:
     - None
     """
-    # Load input data
+    if not os.path.isfile(input_file):
+        raise FileNotFoundError(f"Input file not found: {input_file}")
+
     df = pd.read_csv(input_file)
     
     # Define valid ranges (based on physical limits)
@@ -140,7 +142,9 @@ def auto_generate_physics_pv(input_file, output_file, temp_coeff=-0.0045):
     Returns:
     - None
     """
-    # Load input data
+    if not os.path.isfile(input_file):
+        raise FileNotFoundError(f"Input file not found: {input_file}")
+
     df = pd.read_csv(input_file)
     
     # Check for required columns

@@ -649,6 +649,7 @@ def validate_param(name, value, stats=None):
         'rh': 50.0,
         'ozone': 300.0,
         'aod550': 0.12,
+        'altitude': 0.0,
     }
     ranges = {
         'temperature': (-80, 60),
@@ -658,6 +659,7 @@ def validate_param(name, value, stats=None):
         'rh': (1, 99),  # Use narrower range for RH
         'ozone': (100, 500),
         'aod550': (0.01, 1.5),
+        'altitude': (-500, 9000),
     }
 
     # Handle missing or NaN values
@@ -1116,8 +1118,9 @@ def create_smarts_input_surface(params):
     # ✅ Card 10c: Proper order = tilt, azimuth, albedo
     content.append(f"{params['tilt_angle']} {params['azimuth']} {int(round(albedo))} !Card 10c Tilt variables")
 
-    # Card 11: Wavelength range
-    content.append("280 4000 1.0 1367.0 !Card 11 Input wavelengths; solar spectrum")
+    # Card 11: Albedo block split across two lines
+    content.append("48 !Card 11 IALBD")
+    content.append(f"{int(round(albedo))} !Card 11a Albedo value")
 
     # Card 12: Output format
     content.append("2 !Card 12 IPRT")
@@ -1147,12 +1150,12 @@ def create_smarts_input_surface(params):
         zenith = 48.19  # Fallback
 
     # Handle high zenith angles properly for air mass calculation
-    if zenith > 89:
-        air_mass = 10.0  # Maximum air mass for SMARTS
+    if zenith >= 90:
+        air_mass = 10.0
     else:
-        zenith = min(89.0, zenith)  # Cap only for air mass calculation
-        air_mass = 1 / (math.cos(math.radians(zenith)) + 0.50572 * (96.07995 - zenith) ** -1.6364)
-        air_mass *= math.exp(-elevation / 8434.5)
+        zenith = max(0.0, min(89.0, zenith))
+        m = 1 / (math.cos(math.radians(zenith)) + 0.50572 * (96.07995 - zenith) ** -1.6364)
+        air_mass = m * math.exp(-elevation / 8434.5)
         air_mass = min(10.0, max(1.0, air_mass))
     content.append(f"{air_mass:.1f} !Card 17a Air mass")
 
@@ -1277,18 +1280,18 @@ def create_smarts_input(output_path, params, template_name="smarts_input", metad
     # Card 17: Air mass
     if 'solar_zenith' in params and params['solar_zenith'] is not None:
         zenith = validate_param('solar_zenith', params['solar_zenith'])
-        zenith = min(80, zenith)  # Limit zenith angle to prevent extreme air mass values
-        air_mass = 1.0 / math.cos(math.radians(zenith))
-        air_mass = min(10.0, max(1.0, air_mass))  # Keep within reasonable bounds
+    elif 'lat' in params and 'lon' in params and 'time' in params:
+        zenith, _, _ = calculate_solar_position(params['lat'], params['lon'], params['time'])
     else:
-        # Calculate solar position if not available
-        if 'lat' in params and 'lon' in params and 'time' in params:
-            zenith, _, _ = calculate_solar_position(params['lat'], params['lon'], params['time'])
-            zenith = min(80, zenith)
-            air_mass = 1.0 / math.cos(math.radians(zenith))
-            air_mass = min(10.0, max(1.0, air_mass))
-        else:
-            air_mass = 1.5  # Default
+        zenith = 48.0
+
+    if zenith >= 90:
+        air_mass = 10.0
+    else:
+        zenith = max(0.0, min(89.0, zenith))
+        m = 1 / (math.cos(math.radians(zenith)) + 0.50572 * (96.07995 - zenith) ** -1.6364)
+        air_mass = m * math.exp(-params.get('elevation', 0) / 8434.5)
+        air_mass = min(10.0, max(1.0, air_mass))
     
     # Format exactly matching the PDF example - with Cards 10, 10b, and 10c on separate lines
     content = [
@@ -1309,7 +1312,8 @@ def create_smarts_input(output_path, params, template_name="smarts_input", metad
         f"{albedo} !Card 10 IALBDX",
         "1 !Card 10b ITILT",
         f"{albedo} 37 180 !Card 10c Tilt variables",
-        "280 4000 1.0 1367.0 !Card 11 Input wavelengths; solar spectrum",
+        "48 !Card 11 IALBD",
+        f"{albedo} !Card 11a Albedo value",
         "2 !Card 12 IPRT",
         "280 4000 .5 !Card12a Print limits",
         "4 !Card12b # Variables to Print",

@@ -1,8 +1,11 @@
 import os
+import logging
 import pandas as pd
 from sqlalchemy import create_engine
 
 DEFAULT_DB_URL = os.getenv("PV_DB_URL", "sqlite:///pv_data.sqlite")
+
+from utils.errors import SynergyDatabaseError
 
 def get_engine(db_url: str = None):
     """Return an SQLAlchemy engine for the given URL.
@@ -19,7 +22,16 @@ def get_engine(db_url: str = None):
         Engine instance connected to the specified database.
     """
     url = db_url or DEFAULT_DB_URL
-    return create_engine(url)
+    if url.startswith("sqlite:///"):
+        path = url.replace("sqlite:///", "")
+        if not os.path.exists(path):
+            logging.warning("SQLite database file not found: %s", path)
+            raise SynergyDatabaseError("SQLite file does not exist", {"path": path})
+    try:
+        return create_engine(url)
+    except Exception as exc:
+        logging.warning("Failed to create engine: %s", exc)
+        raise SynergyDatabaseError("Engine creation failed", {"url": url}) from exc
 
 def read_table(table_name: str, db_url: str = None):
     """Load an entire table into a :class:`pandas.DataFrame`.
