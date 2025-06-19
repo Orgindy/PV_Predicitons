@@ -301,13 +301,18 @@ def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
     # Check which features are actually available
     available_features = [f for f in features if f in df.columns]
     missing_features = [f for f in features if f not in df.columns]
-    
+
     if missing_features:
         logging.warning(f"⚠️ Missing features: {missing_features}")
-        logging.info(f"✅ Available features: {available_features}")
+
+    logging.info(f"Using features: {available_features}")
     
     # Use only available features
     X = filter_valid_columns(df, available_features)
+    missing_count = X.isnull().sum().sum()
+    if missing_count > 0:
+        logging.info(f"Filling {missing_count} missing values with median")
+        X = X.fillna(X.median())
     y = df['PV_Potential_physics']
 
     # --- Train/Test Split ---

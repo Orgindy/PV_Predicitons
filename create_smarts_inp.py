@@ -344,8 +344,16 @@ def extract_era5_values(ds, lat, lon, time, stats=None):
     # Aerosol optical depth (ERA5-based estimate)
     point_data['aod550'] = estimate_aod_era5_only(point_data)
 
+    if point_data['aod550'] is None:
+        logger.warning("AOD missing in ERA5 data, using default 0.12")
+        point_data['aod550'] = 0.12
+
     # Aerosol model
     point_data['aerosol_type'] = determine_advanced_aerosol_type(point_data)
+
+    if point_data.get('ozone') is None:
+        logger.warning("Ozone data missing in ERA5 dataset, using 300 DU")
+        point_data['ozone'] = 300.0
 
     # Add timestamp (for metadata)
     point_data['time'] = actual_time

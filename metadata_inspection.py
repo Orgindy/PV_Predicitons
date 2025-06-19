@@ -17,6 +17,8 @@ def show_metadata(nc_path: str):
     print("\n=== GLOBAL ATTRIBUTES ===")
     for key, val in ds.attrs.items():
         print(f"{key}: {val!r}")
+    if 'crs' not in ds.attrs:
+        print("⚠️ CRS metadata not found")
 
     print("\n=== DIMENSIONS ===")
     for dim, length in ds.dims.items():
@@ -32,6 +34,8 @@ def show_metadata(nc_path: str):
             print("   attrs:")
             for k, v in da.attrs.items():
                 print(f"     {k}: {v!r}")
+        if 'units' not in da.attrs:
+            print("     ⚠️ units attribute missing")
 
     print("\n=== DATA VARIABLES ===")
     for var in ds.data_vars:

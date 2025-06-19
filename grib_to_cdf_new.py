@@ -259,9 +259,15 @@ def convert_all_grib_files(grib_folder, output_folder):
     # Convert each GRIB file and collect successful conversions
     successful_conversions = []
     for grib_file in tqdm(grib_files, desc="Converting GRIB files"):
-        result = grib_to_netcdf(grib_file, output_folder)
-        if result:
-            successful_conversions.append(result)
+        try:
+            result = grib_to_netcdf(grib_file, output_folder)
+            if result:
+                successful_conversions.append(result)
+                logger.info(f"Converted {grib_file}")
+            else:
+                logger.error(f"Failed to convert {grib_file}")
+        except Exception as exc:
+            logger.error(f"Error converting {grib_file}: {exc}")
     
     logger.info(f"Successfully converted {len(successful_conversions)} out of {len(grib_files)} files")
     return successful_conversions

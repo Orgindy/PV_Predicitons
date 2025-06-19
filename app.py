@@ -220,7 +220,11 @@ def load_cluster_dataset(csv_path=DATA_PATH, db_url=DB_URL, db_table=DB_TABLE):
             from database_utils import read_table
             df = read_table(db_table, db_url=db_url)
         else:
-            df = pd.read_csv(csv_path)
+            try:
+                df = pd.read_csv(csv_path)
+            except pd.errors.ParserError as exc:
+                st.error(f"\u274c Failed to parse CSV: {exc}")
+                return None, None
         st.success(f"✅ Dataset loaded: {len(df)} locations")
         
         # Flexible column detection
