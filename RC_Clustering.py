@@ -5,6 +5,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import joblib
 import contextily as ctx
+from config import get_path
 
 from utils.sky_temperature import calculate_sky_temperature_improved
 
@@ -47,9 +48,14 @@ def rc_only_clustering(df, features=None, n_clusters=5, cluster_col='RC_Cluster'
 
     return df_out, model, score
 
-def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology',
-                              lat_col='latitude', lon_col='longitude',
-                              output_path='results/maps/overlay_rc_pv_map.png'):
+def plot_overlay_rc_pv_zones(
+    df,
+    rc_col='RC_Cluster',
+    tech_col='Best_Technology',
+    lat_col='latitude',
+    lon_col='longitude',
+    output_path=os.path.join(get_path("results_path"), "maps", "overlay_rc_pv_map.png"),
+):
     """
     Overlay RC-only clusters and matched PV technologies on the same map.
 

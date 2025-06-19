@@ -6,6 +6,7 @@ from datetime import datetime
 import netCDF4 as nc
 import glob
 import argparse
+from config import get_path
 
 def extract_metadata(out_file_content):
     """Extract metadata from the SMARTS .out.txt file"""
@@ -328,8 +329,11 @@ def process_directory(input_dir, output_dir):
         print("-" * 60)
 
 def main():
-    input_dir = os.getenv("SMARTS_INPUT_DIR", "smarts_out_files")
-    output_dir = os.getenv("SMARTS_OUTPUT_DIR", "processed_spectral")
+    input_dir = os.getenv("SMARTS_INPUT_DIR", get_path("smarts_out_path"))
+    output_dir = os.getenv(
+        "SMARTS_OUTPUT_DIR",
+        os.path.join(get_path("results_path"), "processed_spectral"),
+    )
 
     process_directory(input_dir, output_dir)
 

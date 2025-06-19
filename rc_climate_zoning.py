@@ -11,6 +11,7 @@ from scipy.constants import sigma as σ
 import joblib
 import os
 from sklearn.metrics import silhouette_score
+from config import get_path
 
 from utils.sky_temperature import calculate_sky_temperature_improved
 
@@ -81,9 +82,14 @@ def generate_zone_descriptions(df, cluster_col='RC_Cluster', rc_col='P_rc_net',
     grouped['Zone_Description'] = grouped.apply(describe, axis=1)
     return grouped[[cluster_col, 'Zone_Description']]
 
-def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology',
-                              lat_col='latitude', lon_col='longitude',
-                              output_path='results/maps/overlay_rc_pv_map.png'):
+def plot_overlay_rc_pv_zones(
+    df,
+    rc_col='RC_Cluster',
+    tech_col='Best_Technology',
+    lat_col='latitude',
+    lon_col='longitude',
+    output_path=os.path.join(get_path("results_path"), "maps", "overlay_rc_pv_map.png"),
+):
     """
     Plot a dual-layer overlay map showing RC clusters (background) and best PV tech (foreground).
     """
@@ -117,9 +123,10 @@ def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology'
     plt.close()
     print(f"✅ Overlay map saved: {output_path}")
 
-def run_rc_zoning_pipeline(input_csv,
-                           output_csv='results/rc_zones_described.csv',
-                           overlay_map='results/maps/overlay_rc_pv_map.png',
+def run_rc_zoning_pipeline(
+    input_csv,
+    output_csv=os.path.join(get_path("results_path"), "rc_zones_described.csv"),
+    overlay_map=os.path.join(get_path("results_path"), "maps", "overlay_rc_pv_map.png"),
                            n_clusters=5,
                            db_url=None,
                            db_table=None):
@@ -149,14 +156,14 @@ def run_rc_zoning_pipeline(input_csv,
     print("🔗 Running RC-only clustering...")
     df, rc_model = rc_only_clustering(df, n_clusters=n_clusters)
     # Save KMedoids model to disk
-    model_save_path = "results/models/rc_kmedoids_model.joblib"
+    model_save_path = os.path.join(get_path("results_path"), "models", "rc_kmedoids_model.joblib")
     os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
     joblib.dump(rc_model, model_save_path)
     print(f"💾 Saved RC clustering model to: {model_save_path}")
     
 
     # Directory for results
-    model_dir = "results/models"
+    model_dir = os.path.join(get_path("results_path"), "models")
     os.makedirs(model_dir, exist_ok=True)
 
     # Compute silhouette score (only if >1 cluster)
@@ -176,7 +183,7 @@ def run_rc_zoning_pipeline(input_csv,
     print(f"💾 Saved RC clustering model to: {model_path}")
 
     # Save labels CSV (optional but useful for overlay/debugging)
-    label_csv_path = "results/clusters/rc_cluster_labels.csv"
+    label_csv_path = os.path.join(get_path("results_path"), "clusters", "rc_cluster_labels.csv")
     df[['latitude', 'longitude', 'RC_Cluster']].dropna().to_csv(label_csv_path, index=False)
     print(f"📁 Cluster labels saved to: {label_csv_path}")
 
@@ -201,7 +208,11 @@ def run_rc_zoning_pipeline(input_csv,
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Run RC climate zoning pipeline")
-    parser.add_argument("--input", default="input.csv", help="Path to input CSV")
+    parser.add_argument(
+        "--input",
+        default=os.path.join(get_path("results_path"), "input.csv"),
+        help="Path to input CSV",
+    )
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
     parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"))
     args = parser.parse_args()
