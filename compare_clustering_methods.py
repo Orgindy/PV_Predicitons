@@ -7,6 +7,9 @@ from clustering_methods import run_kmeans, run_gmm, run_dbscan, run_agglomerativ
 from sklearn.preprocessing import StandardScaler
 import os
 import matplotlib.pyplot as plt
+from utils.plot_style import apply_plot_style, finalize_plot
+
+apply_plot_style()
 from sklearn.decomposition import PCA
 
 def load_and_scale_data(csv_path, feature_columns):
@@ -136,31 +139,37 @@ def create_comparison_plots(df, X, scores):
         pca = PCA(n_components=2)
         X_pca = pca.fit_transform(X)
         
-        plt.figure(figsize=(12, 5))
-        
+        plt.figure()
+
         # Plot 1: PCA comparison
         plt.subplot(1, 2, 1)
-        colors = ['red', 'blue', 'green', 'orange']
         methods = ["kmeans", "gmm", "dbscan", "agglomerative"]
         
         for i, method in enumerate(methods):
             col = f"Cluster_{method}"
             if col in df.columns:
-                plt.scatter(X_pca[:, 0], X_pca[:, 1], c=df[col], 
-                           label=method.upper(), alpha=0.6, s=20, 
-                           cmap='tab10')
-        
+                plt.scatter(
+                    X_pca[:, 0],
+                    X_pca[:, 1],
+                    c=df[col],
+                    label=method.upper(),
+                    alpha=0.6,
+                    s=20,
+                    cmap="viridis",
+                )
+
         plt.title("PCA of Climate Features by Clustering Method")
         plt.xlabel("Principal Component 1")
         plt.ylabel("Principal Component 2")
-        plt.grid(True, alpha=0.3)
+        plt.legend(fontsize=11, loc="upper right")
         
         # Plot 2: Silhouette scores
         plt.subplot(1, 2, 2)
         methods = [method for method, _ in scores]
         silhouettes = [score if score is not None else 0 for _, score in scores]
         
-        bars = plt.bar(methods, silhouettes, color="skyblue", edgecolor="black")
+        colors = plt.cm.plasma(np.linspace(0, 1, len(methods)))
+        bars = plt.bar(methods, silhouettes, color=colors, edgecolor="black")
         plt.title("Silhouette Scores by Clustering Method")
         plt.ylabel("Silhouette Score")
         plt.ylim(0, max(silhouettes) * 1.1 if max(silhouettes) > 0 else 1)
@@ -172,11 +181,8 @@ def create_comparison_plots(df, X, scores):
                 plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, 
                         f"{score:.3f}", ha='center', va='bottom', fontsize=10)
         
-        plt.tight_layout()
-        plt.savefig("clustering_comparison_plots.png", dpi=300, bbox_inches='tight')
-        plt.close()
-        print("✅ Saved comparison plots: clustering_comparison_plots.png")
-        
+        finalize_plot("clustering_comparison_plots.png")
+
     except Exception as e:
         print(f"⚠️ Could not create plots: {e}")
 

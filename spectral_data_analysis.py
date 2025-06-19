@@ -15,6 +15,9 @@ import matplotlib
 matplotlib.use("Agg")  # non-interactive backend
 import matplotlib.pyplot as plt
 import seaborn as sns
+from utils.plot_style import apply_plot_style, finalize_plot
+
+apply_plot_style()
 from matplotlib.colors import LinearSegmentedColormap
 import glob
 from scipy import integrate
@@ -425,7 +428,7 @@ def plot_spectral_irradiance(
                 )
             ]
 
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig, ax = plt.subplots()
 
     # Show spectral bands if requested
     if show_bands:
@@ -514,7 +517,7 @@ def create_spectral_composition_plots(band_df, output_dir):
             df_loc = df_filt[df_filt["location_id"] == location]
 
             # Create a plot of the spectral composition
-            fig, ax = plt.subplots(figsize=(12, 8))
+            fig, ax = plt.subplots()
 
             # Extract data for all datetimes for this location
             plot_data = []
@@ -591,13 +594,10 @@ def create_spectral_composition_plots(band_df, output_dir):
 
             plt.tight_layout()
 
-            # Save the plot
             filename = f"spectral_composition_{location}_{irradiance_type}.png"
-            filepath = os.path.join(output_dir, filename)
-            plt.savefig(filepath, dpi=150, bbox_inches="tight")
-            plt.close(fig)
+            finalize_plot(filename)
 
-            created_files.append(filepath)
+            created_files.append(os.path.join("figures", filename))
 
     return created_files
 
@@ -654,7 +654,7 @@ def plot_location_comparison(
     pivot = pivot.drop(columns=["mean"])
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(10, max(6, len(pivot) * 0.3)))
+    fig, ax = plt.subplots()
 
     # Create a heatmap
     cmap = "YlOrRd" if band_name in ["UV", "FIR"] else "viridis"
@@ -667,13 +667,10 @@ def plot_location_comparison(
 
     plt.tight_layout()
 
-    # Save the plot
     filename = f"{band_name}_{irradiance_type}_location_comparison.png"
-    filepath = os.path.join(output_dir, filename)
-    plt.savefig(filepath, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    finalize_plot(filename)
 
-    return filepath
+    return os.path.join("figures", filename)
 
 
 def plot_temporal_variation(band_df, location_id, band_name, output_dir):
@@ -710,9 +707,7 @@ def plot_temporal_variation(band_df, location_id, band_name, output_dir):
     irradiance_types = df_loc["irradiance_type"].unique()
 
     # Create a subplot for each irradiance type
-    fig, axes = plt.subplots(
-        len(irradiance_types), 1, figsize=(12, 4 * len(irradiance_types)), sharex=True
-    )
+    fig, axes = plt.subplots(len(irradiance_types), 1, sharex=True)
 
     # If only one irradiance type, wrap in a list for consistent indexing
     if len(irradiance_types) == 1:
@@ -757,14 +752,11 @@ def plot_temporal_variation(band_df, location_id, band_name, output_dir):
 
     plt.tight_layout()
 
-    # Save the plot
     band_str = "all_bands" if band_name.lower() == "all" else band_name
     filename = f"temporal_variation_{location_id}_{band_str}.png"
-    filepath = os.path.join(output_dir, filename)
-    plt.savefig(filepath, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    finalize_plot(filename)
 
-    return filepath
+    return os.path.join("figures", filename)
 
 
 def plot_band_ratios(band_df, output_dir, location_id=None, date_time=None):
@@ -845,7 +837,7 @@ def plot_band_ratios(band_df, output_dir, location_id=None, date_time=None):
                 continue
 
             # Create the plot
-            fig, ax = plt.subplots(figsize=(12, 6))
+            fig, ax = plt.subplots()
 
             # If we have multiple locations or times, create a boxplot
             if len(ratio_df["location_id"].unique()) > 1 and location_id is None:
@@ -886,11 +878,9 @@ def plot_band_ratios(band_df, output_dir, location_id=None, date_time=None):
             loc_str = f"{location_id}_" if location_id is not None else ""
             time_str = f"{date_time}_" if date_time is not None else ""
             filename = f"band_ratio_{loc_str}{time_str}{ratio_name.replace('/', '_')}_{irradiance_type}.png"
-            filepath = os.path.join(output_dir, filename)
-            plt.savefig(filepath, dpi=150, bbox_inches="tight")
-            plt.close(fig)
+            finalize_plot(filename)
 
-            created_files.append(filepath)
+            created_files.append(os.path.join("figures", filename))
 
     return created_files
 

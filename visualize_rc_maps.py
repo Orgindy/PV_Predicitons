@@ -12,6 +12,9 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+from utils.plot_style import apply_plot_style, finalize_plot
+
+apply_plot_style()
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib.gridspec import GridSpec
@@ -90,7 +93,7 @@ def create_yearly_maps(yearly_df, output_dir, boundaries):
     df_year = yearly_df[yearly_df['year'] == latest_year]
     
     # Create a figure with two maps side by side
-    plt.figure(figsize=(18, 8))
+    plt.figure()
     
     # Setup for both plots
     projection = ccrs.PlateCarree()
@@ -159,15 +162,13 @@ def create_yearly_maps(yearly_df, output_dir, boundaries):
     cbar2.set_label('RC Potential (W/m²)', fontsize=10)
     
     # Add overall title
-    plt.suptitle(f'Annual Radiative Cooling Potential for Europe - {latest_year}', fontsize=16, y=0.98)
-    
-    # Adjust layout and save
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    output_file = os.path.join(output_dir, f'yearly_rc_potential_{latest_year}.png')
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    plt.close()
+    plt.suptitle(
+        f'Annual Radiative Cooling Potential for Europe - {latest_year}',
+        fontsize=16,
+        y=0.98,
+    )
 
-    print(f"Saved yearly map to: {output_file}")
+    finalize_plot(f"yearly_rc_potential_{latest_year}.png")
 
 
 def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
@@ -203,7 +204,7 @@ def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
         return
     
     # Create a figure with maps for each season
-    fig = plt.figure(figsize=(15, 12))
+    fig = plt.figure()
     gs = GridSpec(2, 2, figure=fig)
     
     # Setup for all plots
@@ -262,17 +263,9 @@ def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
     plt.suptitle(f'Seasonal {variable_label} Radiative Cooling Potential for Europe - {latest_year}', 
                  fontsize=16, y=0.98)
     
-    # Adjust layout and save
-    plt.tight_layout(rect=[0, 0, 0.9, 0.96])
-    variable_str = "basic" if variable == "P_rc_basic" else "net"
-    output_file = os.path.join(
-        output_dir,
-        f"seasonal_rc_potential_{variable_str}_{latest_year}.png",
+    finalize_plot(
+        f"seasonal_rc_potential_{'basic' if variable == 'P_rc_basic' else 'net'}_{latest_year}.png"
     )
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    plt.close()
-
-    print(f"Saved seasonal {variable} map to: {output_file}")
 
 
 def main():
