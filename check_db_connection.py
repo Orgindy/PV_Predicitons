@@ -20,7 +20,9 @@ def main(db_url: str | None = None, path: str | None = None) -> int:
         engine = get_engine(url)
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        logging.info("Successfully connected to the database.")
+        msg = "Successfully connected to the database."
+        print(msg)
+        logging.info(msg)
         return 0
     except (SQLAlchemyError, SynergyDatabaseError) as exc:
         logging.warning("Database connection failed: %s", exc)

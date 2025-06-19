@@ -7,6 +7,7 @@ Created on Mon May 26 12:21:06 2025
 import os
 import pandas as pd
 import numpy as np
+from config import get_path
 
 EMOJI_ENABLED = True
 
@@ -177,8 +178,16 @@ if __name__ == "__main__":
     from database_utils import read_table, write_dataframe
 
     parser = argparse.ArgumentParser(description="Add Synergy_Index to a dataset")
-    parser.add_argument("--input", default="clustered_dataset.csv", help="Input CSV path")
-    parser.add_argument("--output", default="clustered_dataset_synergy.csv", help="Output CSV path")
+    parser.add_argument(
+        "--input",
+        default=os.path.join(get_path("results_path"), "clustered_dataset.csv"),
+        help="Input CSV path",
+    )
+    parser.add_argument(
+        "--output",
+        default=os.path.join(get_path("results_path"), "clustered_dataset_synergy.csv"),
+        help="Output CSV path",
+    )
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"), help="Database URL")
     parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"), help="Table name for DB operations")
     parser.add_argument("--no-emoji", action="store_true", help="Disable emoji output")

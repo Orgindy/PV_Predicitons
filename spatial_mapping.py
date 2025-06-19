@@ -8,6 +8,7 @@ import seaborn as sns
 import contextily as ctx
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from config import get_path
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, silhouette_score
 from sklearn_extra.cluster import KMedoids
@@ -399,8 +400,8 @@ if __name__ == "__main__":
     import argparse, os
 
     parser = argparse.ArgumentParser(description='PV Potential Analysis and Clustering')
-    parser.add_argument('--input', default='merged_dataset.csv', help='Input CSV file path')
-    parser.add_argument('--output', default='clustered_dataset.csv', help='Output CSV file path')
+    parser.add_argument('--input', default=get_path('merged_data_path'), help='Input CSV file path')
+    parser.add_argument('--output', default=os.path.join(get_path('results_path'), 'clustered_dataset.csv'), help='Output CSV file path')
     parser.add_argument('--clusters', type=int, default=5, help='Number of clusters for K-Medoids')
     parser.add_argument('--landmask', action='store_true', help='Apply land mask and export GeoJSON')
 
@@ -410,8 +411,9 @@ if __name__ == "__main__":
     if args.landmask:
         clustered_df = pd.read_csv(args.output)
         land_df = add_land_mask(clustered_df)
-        os.makedirs('results/clusters', exist_ok=True)
-        land_df.to_file('results/clusters/clustered_land_only.geojson', driver='GeoJSON')
+        results_dir = os.path.join(get_path('results_path'), 'clusters')
+        os.makedirs(results_dir, exist_ok=True)
+        land_df.to_file(os.path.join(results_dir, 'clustered_land_only.geojson'), driver='GeoJSON')
 
     # Main pipeline
     final_df = main_clustering_pipeline(

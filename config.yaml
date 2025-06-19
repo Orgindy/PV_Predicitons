@@ -1,10 +1,7 @@
-number_of_clusters: 5
-ir_weight: 0.6
-temp_weight: 0.4
-input_paths:
-  era5: data/ERA5_daily.nc
-output_paths:
-  models: results/models
-  plots: results/plots
-  cluster_outputs: results/cluster_outputs
-  summaries: results/summaries
+era5_path: "C:/Users/gindi002/DATASET/Era5_GRIB_NEW_dataset_2023-2019_and_more_future"
+merged_data_path: "C:/Users/gindi002/DATASET/merged_dataset.csv"
+pv_database_path: "C:/Users/gindi002/DATASET/pv_database.csv"
+results_path: "C:/Users/gindi002/PROJECT_RESULTS/"
+smarts_inp_path: "C:/Users/gindi002/DATASET/smarts_inp_files/"
+smarts_out_path: "C:/Users/gindi002/DATASET/smarts_out_files/"
+shapefile_path: "C:/Users/gindi002/DATASET/koppen_shapefile.shp"
