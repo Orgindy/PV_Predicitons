@@ -1,6 +1,8 @@
 import os
+import logging
 from clustering import main_matching_pipeline
 import pandas as pd
+from utils.feature_utils import save_config
 
 
 def multi_year_matching_pipeline(
@@ -29,6 +31,18 @@ def multi_year_matching_pipeline(
     """
 
     os.makedirs(output_dir, exist_ok=True)
+    save_config(
+        {
+            "years": years,
+            "base_input_path": base_input_path,
+            "output_dir": output_dir,
+            "borders_path": borders_path,
+            "k_range": list(k_range),
+            "db_url": db_url,
+            "db_table": db_table,
+        },
+        os.path.join(output_dir, "logs"),
+    )
 
     results = []
 
@@ -42,9 +56,9 @@ def multi_year_matching_pipeline(
             f"matched_dataset_{year}.csv",
         )
 
-        print(f"\n=== Processing {year} ===")
-        print(f"Input: {input_file}")
-        print(f"Output: {output_file}")
+        logging.info(f"\n=== Processing {year} ===")
+        logging.info(f"Input: {input_file}")
+        logging.info(f"Output: {output_file}")
 
         if db_url:
             from database_utils import read_table, write_dataframe
@@ -64,7 +78,7 @@ def multi_year_matching_pipeline(
             continue
 
         if not os.path.exists(input_file):
-            print(f"❌ Input file not found for {year}")
+            logging.error(f"❌ Input file not found for {year}")
             continue
 
         try:
@@ -79,7 +93,7 @@ def multi_year_matching_pipeline(
                 df["Year"] = year
                 results.append(df)
         except Exception as e:
-            print(f"❌ Error processing year {year}: {e}")
+            logging.error(f"❌ Error processing year {year}: {e}")
 
     if results:
         combined = pd.concat(results, ignore_index=True)
@@ -88,10 +102,10 @@ def multi_year_matching_pipeline(
             "matched_dataset_all_years.csv",
         )
         combined.to_csv(combined_file, index=False)
-        print(f"\n✅ Combined multi-year dataset saved to {combined_file}")
+        logging.info(f"\n✅ Combined multi-year dataset saved to {combined_file}")
         return combined
 
-    print("⚠️ No results generated.")
+    logging.warning("⚠️ No results generated.")
     return None
 
 

@@ -5,10 +5,12 @@ import contextily as ctx
 from sklearn_extra.cluster import KMedoids
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
-import os 
+import os
+import logging
 import numpy as np
 from sklearn.cluster import KMeans
 from matplotlib import ticker
+from utils.feature_utils import compute_cluster_spectra
 
 from shapely.geometry import Point
 import rasterio
@@ -18,7 +20,7 @@ from pyproj import Transformer
 try:
     from utils.humidity import compute_relative_humidity
 except ImportError:
-    print("⚠️ utils.humidity not available, using local fallback")
+    logging.info("⚠️ utils.humidity not available, using local fallback")
     def compute_relative_humidity(T_air_K, T_dew_K):
         """Fallback humidity calculation"""
         T_air = np.array(T_air_K) - 273.15
@@ -39,9 +41,9 @@ def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
     if db_url:
         from database_utils import read_table
         df = read_table(db_table, db_url=db_url)
-        print(f"📥 Loaded {len(df)} rows from table {db_table}")
+        logging.info(f"📥 Loaded {len(df)} rows from table {db_table}")
     else:
-        print(f"📥 Loading dataset from {input_path}")
+        logging.info(f"📥 Loading dataset from {input_path}")
 
         # Check if file exists, try alternatives
         if not os.path.exists(input_path):
@@ -50,24 +52,24 @@ def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
             for alt_path in alternative_paths:
                 if os.path.exists(alt_path):
                     input_path = alt_path
-                    print(f"📥 Using alternative input: {input_path}")
+                    logging.info(f"📥 Using alternative input: {input_path}")
                     break
 
             if input_path is None:
-                print(f"❌ No input file found. Tried: {alternative_paths}")
+                logging.error(f"❌ No input file found. Tried: {alternative_paths}")
                 return None
 
         df = pd.read_csv(input_path)
-        print(f"📊 Loaded {len(df)} rows with columns: {list(df.columns)}")
+        logging.info(f"📊 Loaded {len(df)} rows with columns: {list(df.columns)}")
 
     # Add albedo if available from GRIB data
     if "fal" in df.columns and "Albedo" not in df.columns:
         df["Albedo"] = df["fal"]
-        print("✅ Added Albedo from 'fal' column")
+        logging.info("✅ Added Albedo from 'fal' column")
 
     # Compute RH if missing
     if "RH" not in df.columns:
-        print("🧮 Computing RH...")
+        logging.info("🧮 Computing RH...")
         # Look for temperature and dewpoint columns with flexible naming
         temp_cols = [col for col in ['T_air', 'T2M', 'Temperature'] if col in df.columns]
         dew_cols = [col for col in ['Dew_Point', 'TD2M', 'Dewpoint', 'd2m'] if col in df.columns]
@@ -82,10 +84,10 @@ def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
                 T_dew_K = T_dew_K + 273.15
             
             df["RH"] = compute_relative_humidity(T_air_K, T_dew_K)
-            print(f"✅ Computed RH using {temp_cols[0]} and {dew_cols[0]}")
+            logging.info(f"✅ Computed RH using {temp_cols[0]} and {dew_cols[0]}")
         else:
             df["RH"] = 50.0  # Default value
-            print("⚠️ Could not compute RH, using default value of 50%")
+            logging.info("⚠️ Could not compute RH, using default value of 50%")
 
     # Flexible feature selection - check what's actually available
     potential_features = [
@@ -116,10 +118,10 @@ def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
     available_features = list(feature_mapping.keys())
     feature_columns = [feature_mapping[f] for f in available_features]
     
-    print(f"🎯 Using {len(available_features)} features: {available_features}")
+    logging.info(f"🎯 Using {len(available_features)} features: {available_features}")
     
     if len(available_features) < 3:
-        print(f"❌ Not enough features ({len(available_features)}), need at least 3")
+        logging.error(f"❌ Not enough features ({len(available_features)}), need at least 3")
         return None
 
     # Prepare data for clustering
@@ -128,7 +130,7 @@ def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
     # Handle missing values
     missing_count = X.isnull().sum().sum()
     if missing_count > 0:
-        print(f"🔧 Filling {missing_count} missing values with median")
+        logging.info(f"🔧 Filling {missing_count} missing values with median")
         X = X.fillna(X.median())
     
     # Scale and apply clustering
@@ -142,8 +144,8 @@ def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
     if db_url:
         from database_utils import write_dataframe
         write_dataframe(df, db_table, db_url=db_url, if_exists="replace")
-        print(f"✅ Saved enhanced dataset to table {db_table}")
-    print(f"✅ Saved enhanced dataset to {output_path}")
+        logging.info(f"✅ Saved enhanced dataset to table {db_table}")
+    logging.info(f"✅ Saved enhanced dataset to {output_path}")
     return df
 
 
@@ -152,7 +154,7 @@ def run_kmedoids_clustering(X_scaled, n_clusters=5, metric='euclidean', random_s
     kmedoids.fit(X_scaled)
     labels = kmedoids.labels_
     silhouette = silhouette_score(X_scaled, labels)
-    print(f"K-Medoids Silhouette Score: {silhouette:.4f}")
+    logging.info(f"K-Medoids Silhouette Score: {silhouette:.4f}")
     return kmedoids, labels, silhouette
 
 def assign_clusters_to_dataframe(df, labels, column_name='Cluster_ID'):
@@ -164,7 +166,7 @@ def prepare_features_for_clustering(df, use_predicted_pv=True):
     """
     Prepare features for clustering with flexible column detection.
     """
-    print("🔧 Preparing features for clustering...")
+    logging.info("🔧 Preparing features for clustering...")
     
     # Map feature names to possible column names in your data
     feature_options = {
@@ -187,28 +189,28 @@ def prepare_features_for_clustering(df, use_predicted_pv=True):
         for col in possible_cols:
             if col in df.columns:
                 feature_names.append(col)
-                print(f"✅ Found {feature_name} as '{col}'")
+                logging.info(f"✅ Found {feature_name} as '{col}'")
                 break
         else:
-            print(f"⚠️ {feature_name} not found")
+            logging.info(f"⚠️ {feature_name} not found")
     
     # Add predicted PV potential if requested and available
     if use_predicted_pv and 'Predicted_PV_Potential' in df.columns:
         feature_names.append('Predicted_PV_Potential')
-        print("✅ Added Predicted_PV_Potential")
+        logging.info("✅ Added Predicted_PV_Potential")
     
     if len(feature_names) < 3:
-        print(f"❌ Not enough features found ({len(feature_names)}). Need at least 3.")
+        logging.error(f"❌ Not enough features found ({len(feature_names)}). Need at least 3.")
         return None, [], None
     
-    print(f"🎯 Using {len(feature_names)} features: {feature_names}")
+    logging.info(f"🎯 Using {len(feature_names)} features: {feature_names}")
     
     X = df[feature_names].copy()
     
     # Handle missing values
     missing_count = X.isnull().sum().sum()
     if missing_count > 0:
-        print(f"🔧 Handling {missing_count} missing values")
+        logging.info(f"🔧 Handling {missing_count} missing values")
         X = X.fillna(X.median())
     
     scaler = StandardScaler()
@@ -235,9 +237,9 @@ def find_optimal_k(X_scaled, k_range=range(2, 11), random_state=42):
             model.fit(X_scaled)
             score = silhouette_score(X_scaled, model.labels_)
             scores[k] = score
-            print(f"k = {k}: silhouette = {score:.4f}")
+            logging.info(f"k = {k}: silhouette = {score:.4f}")
         except Exception as e:
-            print(f"Failed for k = {k}: {e}")
+            logging.info(f"Failed for k = {k}: {e}")
     
     # Plotting
     plt.figure(figsize=(8, 5))
@@ -250,7 +252,7 @@ def find_optimal_k(X_scaled, k_range=range(2, 11), random_state=42):
     plt.show()
 
     best_k = max(scores, key=scores.get)
-    print(f"\n✅ Best k based on silhouette score: {best_k} (score = {scores[best_k]:.4f})")
+    logging.info(f"\n✅ Best k based on silhouette score: {best_k} (score = {scores[best_k]:.4f})")
     return scores, best_k
 
 
@@ -302,66 +304,6 @@ def get_pv_cell_profiles():
     }
     return pv_profiles
 
-def compute_cluster_spectra(df_clustered, cluster_col='Cluster_ID'):
-    """
-    Computes average spectral band values and temperature for each cluster.
-    """
-    print("📊 Computing cluster spectra...")
-    
-    # Check which spectral and temperature columns are available
-    spectral_col_options = {
-        'Blue': ['Blue_band', 'Blue_Band', 'Blue'],
-        'Green': ['Green_band', 'Green_Band', 'Green'], 
-        'Red': ['Red_band', 'Red_Band', 'Red'],
-        'IR': ['IR_band', 'NIR_band', 'IR_Band', 'IR']
-    }
-    
-    spectral_cols = []
-    spectral_mapping = {}
-    
-    for band, options in spectral_col_options.items():
-        for col in options:
-            if col in df_clustered.columns:
-                spectral_cols.append(col)
-                spectral_mapping[band] = col
-                print(f"✅ Found {band} band as '{col}'")
-                break
-        else:
-            print(f"⚠️ {band} band not found")
-    
-    if not spectral_cols:
-        print("❌ No spectral columns found for cluster analysis")
-        return pd.DataFrame()
-    
-    # Find temperature column
-    temp_col = None
-    for col in ['T_air', 'T2M', 'Temperature']:
-        if col in df_clustered.columns:
-            temp_col = col
-            print(f"✅ Using temperature column: {col}")
-            break
-    
-    if not temp_col:
-        print("❌ No temperature column found")
-        return pd.DataFrame()
-
-    # Compute cluster averages
-    grouped = df_clustered.groupby(cluster_col)
-    cluster_spectra_df = grouped[spectral_cols + [temp_col]].mean().reset_index()
-
-    # Normalize spectra to sum = 1 if we have multiple bands
-    if len(spectral_cols) > 1:
-        spectrum_sum = cluster_spectra_df[spectral_cols].sum(axis=1)
-        for col in spectral_cols:
-            cluster_spectra_df[col] = cluster_spectra_df[col] / spectrum_sum
-
-    # Add standardized column names for compatibility
-    for band, col in spectral_mapping.items():
-        if col in cluster_spectra_df.columns:
-            cluster_spectra_df[f'{band}_band'] = cluster_spectra_df[col]
-
-    print(f"✅ Computed spectra for {len(cluster_spectra_df)} clusters")
-    return cluster_spectra_df
 
 def compute_pv_potential_by_cluster_year(df, 
                                          cluster_col='Cluster_ID',
@@ -395,7 +337,7 @@ def compute_pv_potential_by_cluster_year(df,
     ).reset_index()
 
     grouped.to_csv(output_path, index=False)
-    print(f"✅ Saved PV potential by cluster and year to {output_path}")
+    logging.info(f"✅ Saved PV potential by cluster and year to {output_path}")
     return grouped
 
 
@@ -535,7 +477,7 @@ def compute_cluster_summary(df, cluster_col='Cluster_ID', output_path='results/c
     })
 
     summary.to_csv(output_path, index=False)
-    print(f"✅ Saved cluster summary to {output_path}")
+    logging.info(f"✅ Saved cluster summary to {output_path}")
     return summary
 
 def plot_prediction_uncertainty_with_contours(
@@ -562,7 +504,7 @@ def plot_prediction_uncertainty_with_contours(
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     if value_col not in df.columns:
-        print(f"⚠️ Missing column: {value_col}")
+        logging.info(f"⚠️ Missing column: {value_col}")
         return
 
     gdf = gpd.GeoDataFrame(
@@ -586,7 +528,7 @@ def plot_prediction_uncertainty_with_contours(
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
     except Exception as e:
-        print("Basemap not available – offline mode.")
+        logging.info("Basemap not available – offline mode.")
 
     ax.set_title("Prediction Uncertainty Map", fontsize=16)
     ax.set_axis_off()
@@ -613,13 +555,13 @@ def plot_prediction_uncertainty_with_contours(
     plt.tight_layout()
     plt.savefig(output_path, dpi=300)
     plt.close()
-    print(f"✅ Saved uncertainty map with contours to {output_path}")
+    logging.info(f"✅ Saved uncertainty map with contours to {output_path}")
 
 def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col='longitude', cluster_col='Cluster_ID'):
     """
     Plot best PV technology for each location on a geographic map.
     """
-    print("🗺️ Creating technology matching map...")
+    logging.info("🗺️ Creating technology matching map...")
     
     # Check if coordinate columns exist with flexible naming
     coord_mapping = {}
@@ -639,13 +581,13 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
             break
     
     if len(coord_mapping) < 2:
-        print("⚠️ Cannot create map - missing coordinate columns")
-        print(f"Available columns: {list(df_clustered.columns)}")
+        logging.info("⚠️ Cannot create map - missing coordinate columns")
+        logging.info(f"Available columns: {list(df_clustered.columns)}")
         return
     
     lat_col = coord_mapping['lat']
     lon_col = coord_mapping['lon']
-    print(f"✅ Using coordinates: {lat_col}, {lon_col}")
+    logging.info(f"✅ Using coordinates: {lat_col}, {lon_col}")
     
     # Merge technology data
     df_merged = df_clustered.merge(match_df[[cluster_col, 'Best_Technology']], 
@@ -675,7 +617,7 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
         try:
             ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
         except Exception as e:
-            print("⚠️ Basemap not available - continuing without")
+            logging.info("⚠️ Basemap not available - continuing without")
 
         ax.set_title("Best Matched PV Technology by Location", fontsize=15)
         ax.set_axis_off()
@@ -684,10 +626,10 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
         os.makedirs("results/maps", exist_ok=True)
         plt.savefig("results/maps/technology_matches.png", dpi=300, bbox_inches='tight')
         plt.close()
-        print("✅ Technology matching map saved to results/maps/technology_matches.png")
+        logging.info("✅ Technology matching map saved to results/maps/technology_matches.png")
         
     except Exception as e:
-        print(f"⚠️ Could not create map: {e}")
+        logging.info(f"⚠️ Could not create map: {e}")
         
 def plot_clusters_map(df_clustered, lat_col='latitude', lon_col='longitude',
                       cluster_col='Cluster_ID', title='PV Performance Clusters',
@@ -746,7 +688,7 @@ def plot_clusters_map(df_clustered, lat_col='latitude', lon_col='longitude',
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
     except Exception as e:
-        print("Basemap not loaded — offline mode.")
+        logging.info("Basemap not loaded — offline mode.")
 
     ax.set_title(title, fontsize=16)
     ax.set_axis_off()
@@ -765,7 +707,7 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     if 'Prediction_Uncertainty' not in df.columns:
-        print("⚠️ No 'Prediction_Uncertainty' column found. Skipping plot.")
+        logging.info("⚠️ No 'Prediction_Uncertainty' column found. Skipping plot.")
         return
 
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[lon_col], df[lat_col]), crs="EPSG:4326").to_crs(epsg=3857)
@@ -776,21 +718,21 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
     except Exception as e:
-        print("Basemap not loaded — offline mode.")
+        logging.info("Basemap not loaded — offline mode.")
 
     ax.set_title("Random Forest Prediction Uncertainty Map", fontsize=14)
     ax.set_axis_off()
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
-    print(f"🖼️ Saved prediction uncertainty map to: {output_path}")
+    logging.info(f"🖼️ Saved prediction uncertainty map to: {output_path}")
 
 
 def add_koppen_geiger(df, kg_raster='DATASET/kg_classification.tif', lat_col='latitude', lon_col='longitude'):
     """Attach Köppen–Geiger climate classification to each row."""
     df_out = df.copy()
     if not os.path.exists(kg_raster):
-        print(f"⚠️ KG raster not found at {kg_raster}")
+        logging.info(f"⚠️ KG raster not found at {kg_raster}")
         df_out['KG_Code'] = np.nan
         df_out['KG_Label'] = np.nan
         return df_out
@@ -820,7 +762,7 @@ def plot_clusters_with_kg(df, kg_raster='DATASET/kg_classification.tif', lat_col
     """Overlay cluster IDs with Köppen–Geiger zones on a map."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     if not os.path.exists(kg_raster):
-        print(f"⚠️ KG raster not found at {kg_raster}")
+        logging.info(f"⚠️ KG raster not found at {kg_raster}")
         return
     with rasterio.open(kg_raster) as src:
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -833,7 +775,7 @@ def plot_clusters_with_kg(df, kg_raster='DATASET/kg_classification.tif', lat_col
         plt.tight_layout()
         plt.savefig(output_path, dpi=300)
         plt.close()
-        print(f"✅ Saved map with KG overlay to {output_path}")
+        logging.info(f"✅ Saved map with KG overlay to {output_path}")
 
 def main_matching_pipeline(
     clustered_data_path='data/clustered_dataset_rh_albedo.csv',
@@ -846,7 +788,7 @@ def main_matching_pipeline(
     Full pipeline to assign best PV technology per location based on clustering
     + spectral analysis. The final mapping no longer requires a shapefile path.
     """
-    print("\n=== PV Technology Matching Pipeline ===")
+    logging.info("\n=== PV Technology Matching Pipeline ===")
     
     # Create output directories
     os.makedirs("results", exist_ok=True)
@@ -855,45 +797,45 @@ def main_matching_pipeline(
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     # Step 1: Prepare dataset
-    print("\n=== Step 1: Preparing Input Dataset ===")
+    logging.info("\n=== Step 1: Preparing Input Dataset ===")
     df = prepare_clustered_dataset(db_url=db_url, db_table=db_table)
     if df is None:
-        print("❌ Failed to prepare dataset")
+        logging.error("❌ Failed to prepare dataset")
         return None
 
     # --- Load it ---
-    print("\n=== Loading Input Dataset ===")
+    logging.info("\n=== Loading Input Dataset ===")
     if db_url:
         from database_utils import read_table
         df = read_table(db_table, db_url=db_url)
     else:
         df = pd.read_csv(clustered_data_path)
 
-    print("\n=== Preparing Features for Clustering ===")
+    logging.info("\n=== Preparing Features for Clustering ===")
     X_scaled, features, scaler = prepare_features_for_clustering(df)
 
-    print("\n=== Finding Optimal Number of Clusters ===")
+    logging.info("\n=== Finding Optimal Number of Clusters ===")
     _, best_k = find_optimal_k(X_scaled, k_range=k_range)
 
-    print(f"\n=== Running K-Medoids Clustering with k = {best_k} ===")
+    logging.info(f"\n=== Running K-Medoids Clustering with k = {best_k} ===")
     kmedoids, labels, silhouette = run_kmedoids_clustering(X_scaled, n_clusters=best_k)
 
-    print("\n=== Assigning Clusters to Data ===")
+    logging.info("\n=== Assigning Clusters to Data ===")
     df_clustered = assign_clusters_to_dataframe(df, labels)
 
-    print("\n=== Loading PV Cell Profiles from CSV ===")
+    logging.info("\n=== Loading PV Cell Profiles from CSV ===")
     pv_profiles = get_pv_cell_profiles()
 
-    print("\n=== Computing Cluster-Average Spectral & Temperature ===")
+    logging.info("\n=== Computing Cluster-Average Spectral & Temperature ===")
     cluster_spectra = compute_cluster_spectra(df_clustered)
 
-    print("\n=== Matching PV Technologies to Clusters ===")
+    logging.info("\n=== Matching PV Technologies to Clusters ===")
     match_df = match_technology_to_clusters(cluster_spectra, pv_profiles)
     
     df_clustered = assign_clusters_to_dataframe(df, labels)
     df_clustered = label_clusters(df_clustered)
 
-    print("\n=== Merging Technology Matches to Locations ===")
+    logging.info("\n=== Merging Technology Matches to Locations ===")
     df_final = df_clustered.merge(match_df[['Cluster_ID', 'Best_Technology']], on='Cluster_ID', how='left')
     
 
@@ -901,7 +843,7 @@ def main_matching_pipeline(
     if db_url:
         from database_utils import write_dataframe
         write_dataframe(df_final, db_table, db_url=db_url, if_exists="replace")
-    print(f"✅ Technology-matched dataset saved to {output_file}")
+    logging.info(f"✅ Technology-matched dataset saved to {output_file}")
     # Compute adjusted yield for all PV techs at each location
     adjusted_yield_df = compute_adjusted_yield_by_technology(df_final, pv_profiles)
     plot_prediction_uncertainty_with_contours(df_final, use_hatching=False)
@@ -909,11 +851,11 @@ def main_matching_pipeline(
 
     # Optional: Save to CSV
     adjusted_yield_df.to_csv("results/adjusted_yield_table.csv", index=False)
-    print("✅ Adjusted PV yield table saved to results/adjusted_yield_table.csv")
+    logging.info("✅ Adjusted PV yield table saved to results/adjusted_yield_table.csv")
     
     df_final = df_final.merge(df_clustered[['Cluster_ID', 'Cluster_Label']], on='Cluster_ID', how='left')
 
-    print("\n=== Plotting Final Technology Recommendation Map ===")
+    logging.info("\n=== Plotting Final Technology Recommendation Map ===")
     # plot_technology_matches no longer requires a shapefile path
     plot_technology_matches(df_final, match_df, cluster_col='Cluster_ID')
     plot_prediction_uncertainty(df_final, output_path='results/maps/prediction_uncertainty_map.png')
@@ -926,9 +868,9 @@ def main_matching_pipeline(
         df_with_kg = add_koppen_geiger(df_final)
         df_with_kg.to_csv('clustered_dataset_with_kg.csv', index=False)
         plot_clusters_with_kg(df_with_kg, output_path='figures/cluster_map_with_kg.png')
-        print('✅ Köppen–Geiger enrichment complete')
+        logging.info('✅ Köppen–Geiger enrichment complete')
     except Exception as e:
-        print(f'⚠️ KG enrichment failed: {e}')
+        logging.info(f'⚠️ KG enrichment failed: {e}')
 
     return df_final
 

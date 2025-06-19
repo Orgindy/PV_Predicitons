@@ -18,6 +18,13 @@ import joblib
 from datetime import datetime
 import os
 from xgboost import XGBRegressor
+import logging
+
+from utils.feature_utils import (
+    compute_band_ratios,
+    filter_valid_columns,
+    compute_cluster_spectra,
+)
 from sklearn.gaussian_process.kernels import RBF
 
 # -----------------------------
@@ -62,33 +69,31 @@ def get_pv_cell_profiles():
     }
     return pv_profiles
 
-# -----------------------------
-# Cluster Spectra Calculation
-# -----------------------------
-
-def compute_cluster_spectra(df_clustered, cluster_col='Cluster_ID'):
-    spectral_cols = ['Blue_band', 'Green_band', 'Red_band', 'IR_band']
-    temp_col = 'T_air'
-    grouped = df_clustered.groupby(cluster_col)
-    cluster_spectra_df = grouped[spectral_cols + [temp_col]].mean().reset_index()
-    spectrum_sum = cluster_spectra_df[spectral_cols].sum(axis=1)
-    for col in spectral_cols:
-        cluster_spectra_df[col] = cluster_spectra_df[col] / spectrum_sum
-    return cluster_spectra_df
 
 from pv_potential import calculate_pv_potential
 
+
 def prepare_features_for_ml(df):
-    feature_names = [
+    base_features = [
         'GHI', 'T_air', 'RC_potential', 'Wind_Speed',
         'Dew_Point', 'Cloud_Cover', 'Red_band',
         'Blue_band', 'IR_band', 'Total_band'
     ]
-    X = df[feature_names].copy()
+
+    df = df.copy()
+    df, ratio_cols = compute_band_ratios(
+        df,
+        ['Blue_band', 'Green_band', 'Red_band', 'IR_band'],
+        total_col='Total_band'
+    )
+    feature_names = base_features + ratio_cols
+
+    X = filter_valid_columns(df, feature_names)
     y = df['PV_Potential']
+
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    return X_scaled, y, feature_names, scaler
+    return X_scaled, y, list(X.columns), scaler
 
 
 def train_random_forest(X_scaled, y, feature_names, test_size=0.2, random_state=42,
@@ -112,16 +117,16 @@ def train_random_forest(X_scaled, y, feature_names, test_size=0.2, random_state=
     y_pred = model.predict(X_test)
 
     # --- Evaluation ---
-    print(f"R² Score: {r2_score(y_test, y_pred):.4f}")
-    print(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False):.2f}")
-    print(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}")
+    logging.info(f"R² Score: {r2_score(y_test, y_pred):.4f}")
+    logging.info(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False):.2f}")
+    logging.info(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}")
 
     # --- Save model ---
     os.makedirs(model_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     model_path = os.path.join(model_dir, f"rf_model_k{n_clusters}_{timestamp}.joblib")
     joblib.dump(model, model_path)
-    print(f"💾 Random Forest model saved to: {model_path}")
+    logging.info(f"💾 Random Forest model saved to: {model_path}")
 
     # --- Plot and save feature importance ---
     feature_importance_df = pd.DataFrame({
@@ -136,7 +141,7 @@ def train_random_forest(X_scaled, y, feature_names, test_size=0.2, random_state=
 
     if output_plot:
         plt.savefig(output_plot, dpi=300)
-        print(f"📊 Feature importance plot saved to: {output_plot}")
+        logging.info(f"📊 Feature importance plot saved to: {output_plot}")
     else:
         plt.show()
 
@@ -177,7 +182,7 @@ def train_ensemble_model(df, feature_cols, target_col='PV_Potential_physics', te
     df_out['Predicted_PV_Potential'] = ensemble_preds
     df_out['Prediction_Uncertainty'] = gpr_std
     
-    print(f"✅ Ensemble model trained with {len(feature_cols)} features")
+    logging.info(f"✅ Ensemble model trained with {len(feature_cols)} features")
     return df_out
 
 
@@ -224,9 +229,9 @@ def train_hybrid_ml_models(X, y):
         }
     }
     
-    print("\n=== Model Performance ===")
+    logging.info("\n=== Model Performance ===")
     for name, data in models.items():
-        print(f"{name} - R²: {data['R2']:.4f}, RMSE: {data['RMSE']:.2f}")
+        logging.info(f"{name} - R²: {data['R2']:.4f}, RMSE: {data['RMSE']:.2f}")
     
     return models
 
@@ -235,7 +240,7 @@ def run_kmedoids_clustering(X_scaled, n_clusters=4, metric='euclidean', random_s
     kmedoids.fit(X_scaled)
     labels = kmedoids.labels_
     silhouette = silhouette_score(X_scaled, labels)
-    print(f"K-Medoids Silhouette Score: {silhouette:.4f}")
+    logging.info(f"K-Medoids Silhouette Score: {silhouette:.4f}")
     return kmedoids, labels, silhouette
 
 
@@ -261,14 +266,14 @@ def evaluate_cluster_quality(X_scaled, cluster_labels):
             "Davies-Bouldin Score": round(davies, 4)
         }
 
-        print("\n=== Clustering Quality Metrics ===")
+        logging.info("\n=== Clustering Quality Metrics ===")
         for k, v in scores.items():
-            print(f"{k}: {v}")
+            logging.info(f"{k}: {v}")
 
         return scores
 
     except Exception as e:
-        print(f"❌ Cluster evaluation failed: {e}")
+        logging.warning(f"❌ Cluster evaluation failed: {e}")
         return {}
 
 
@@ -310,8 +315,8 @@ def plot_clusters_map(df, lat_col='latitude', lon_col='longitude', cluster_col='
     gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=35, edgecolor='k')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
-    except Exception as e:
-        print("Basemap could not be loaded.")
+    except Exception:
+        logging.warning("Basemap could not be loaded.")
     ax.set_title(title)
     ax.set_axis_off()
     plt.tight_layout()
@@ -340,7 +345,7 @@ def main_clustering_pipeline(input_file='merged_dataset.csv', output_dir='result
     if not os.path.isfile(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")
     df = pd.read_csv(input_file)
-    print("Calculating physics-based PV Potential...")
+    logging.info("Calculating physics-based PV Potential...")
     df['PV_Potential_physics'] = calculate_pv_potential(
         df['GHI'].values,
         df['T_air'].values,
@@ -364,10 +369,10 @@ def main_clustering_pipeline(input_file='merged_dataset.csv', output_dir='result
     output_plot = os.path.join(plot_dir, f"feature_importance_{run_id}.png")
     model_path = os.path.join(model_dir, f"rf_model_k{n_clusters}_{run_id}.joblib")
 
-    print("Preparing features for Random Forest...")
+    logging.info("Preparing features for Random Forest...")
     X_scaled, y, feature_names, scaler_rf = prepare_features_for_ml(df)
 
-    print("Training Random Forest...")
+    logging.info("Training Random Forest...")
     model, X_train, X_test, y_train, y_test, y_pred, model_path = train_random_forest(
         X_scaled,
         y.values,
@@ -385,13 +390,13 @@ def main_clustering_pipeline(input_file='merged_dataset.csv', output_dir='result
         f.write(f"R² Score: {r2_score(y_test, y_pred):.4f}\n")
         f.write(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False):.2f}\n")
         f.write(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}\n")
-    print(f"📄 Model evaluation metrics saved to: {metrics_path}")
+    logging.info(f"📄 Model evaluation metrics saved to: {metrics_path}")
 
-    print("Predicting PV Potential...")
+    logging.info("Predicting PV Potential...")
     df_with_pred = predict_pv_potential(model, X_scaled, df)
     # Update the variable name for consistency
     df = df_with_pred.copy()
-    print("Preparing features for clustering...")
+    logging.info("Preparing features for clustering...")
     clustering_features = ['GHI', 'T_air', 'RC_potential', 'Wind_Speed', 'Dew_Point', 
                           'Blue_band', 'Red_band', 'IR_band', 'Total_band', 'Predicted_PV_Potential']
     X_cluster_scaled, valid_idx = prepare_features_for_clustering(df_with_pred, clustering_features)    
@@ -400,33 +405,33 @@ def main_clustering_pipeline(input_file='merged_dataset.csv', output_dir='result
     ensemble_features = ['GHI', 'T_air', 'RC_potential', 'Wind_Speed', 'Dew_Point', 
                         'Cloud_Cover', 'Blue_band', 'Red_band', 'IR_band', 'Total_band']
     
-    print("Training ensemble model...")
+    logging.info("Training ensemble model...")
     df_with_pred = train_ensemble_model(df_with_pred, ensemble_features)    
     
-    print("Running K-Medoids clustering...")
+    logging.info("Running K-Medoids clustering...")
     kmedoids, labels, silhouette = run_kmedoids_clustering(X_cluster_scaled, n_clusters=n_clusters)
     sil_path = os.path.join(cluster_dir, f"silhouette_score_{n_clusters}_{run_id}.txt")
     with open(sil_path, 'w') as f:
         f.write(f"Silhouette Score: {silhouette:.4f}\n")
-    print(f"📄 Silhouette score saved to: {sil_path}")
+    logging.info(f"📄 Silhouette score saved to: {sil_path}")
 
-    print("Assigning cluster labels...")
+    logging.info("Assigning cluster labels...")
     df_clustered = assign_clusters_to_dataframe(df_with_pred, labels)
 
     # Cluster spectrum matching
-    print("\n=== Computing Cluster-Averaged Spectra and Temperatures ===")
+    logging.info("\n=== Computing Cluster-Averaged Spectra and Temperatures ===")
     cluster_spectra = compute_cluster_spectra(df_clustered, cluster_col='Cluster_ID')
 
-    print("\n=== Matching PV Technologies to Clusters ===")
+    logging.info("\n=== Matching PV Technologies to Clusters ===")
     pv_profiles = get_pv_cell_profiles()
     match_df = match_technology_to_clusters(cluster_spectra, pv_profiles)
     match_df.to_csv(output_matched, index=False)
-    print(f"✅ Technology-matched dataset saved to: {output_matched}")
+    logging.info(f"✅ Technology-matched dataset saved to: {output_matched}")
 
     df_clustered.to_csv(output_clustered, index=False)
-    print(f"✅ Clustered dataset saved to: {output_clustered}")
+    logging.info(f"✅ Clustered dataset saved to: {output_clustered}")
 
-    print("Plotting clusters on map...")
+    logging.info("Plotting clusters on map...")
     plot_clusters_map(df_clustered)
 
     return df_clustered
@@ -453,12 +458,12 @@ def multi_year_clustering(input_dir='.', output_dir='clustered_outputs', n_clust
 
     input_files = sorted(input_dir.glob(file_pattern))
     if not input_files:
-        print("⚠️ No matching input files found.")
+        logging.warning("⚠️ No matching input files found.")
         return
 
     for file in input_files:
         year = ''.join(filter(str.isdigit, file.stem))
-        print(f"\n📅 Processing year: {year} — {file.name}")
+        logging.info(f"\n📅 Processing year: {year} — {file.name}")
 
         clustered_out = output_dir / f'clustered_dataset_{year}.csv'
         matched_out = output_dir / f'matched_dataset_{year}.csv'
@@ -481,7 +486,7 @@ def multi_year_clustering(input_dir='.', output_dir='clustered_outputs', n_clust
     summary_df = pd.concat(matched_tech_dfs, ignore_index=True)
     summary_csv = output_dir / 'summary_technology_matching.csv'
     summary_df.to_csv(summary_csv, index=False)
-    print(f"\n✅ Multi-year clustering completed. Summary saved to: {summary_csv}")
+    logging.info(f"\n✅ Multi-year clustering completed. Summary saved to: {summary_csv}")
 
     return summary_df
 
@@ -528,7 +533,7 @@ def generate_cluster_summaries(clustered_df, cluster_col='Cluster_ID', save_path
 
     if save_path:
         summary_df.to_csv(save_path, index=False)
-        print(f"✅ Cluster summary saved to: {save_path}")
+        logging.info(f"✅ Cluster summary saved to: {save_path}")
 
     return summary_df
 
@@ -576,7 +581,7 @@ def summarize_and_plot_multi_year_clusters(summary_df, output_dir='results/clust
     avg_scores = summary_df.groupby(['Year', 'Best_Technology']).mean(numeric_only=True).reset_index()
     avg_scores.to_csv(output_dir / 'average_scores_per_tech_year.csv', index=False)
 
-    print(f"📊 Saved summary plots and CSVs to {output_dir}")
+    logging.info(f"📊 Saved summary plots and CSVs to {output_dir}")
 
 def rc_only_clustering(df, n_clusters=5):
     from sklearn_extra.cluster import KMedoids

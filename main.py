@@ -11,6 +11,7 @@ from config import AppConfig
 from utils.resource_monitor import ResourceMonitor
 from utils.file_operations import SafeFileOps
 from utils.errors import ErrorAggregator, ProcessingError
+from utils.feature_utils import save_config
 
 # Import pipeline functions from the clustering module
 from clustering import (
@@ -275,6 +276,7 @@ def main():
     """Main execution function with error handling and options."""
 
     args = parse_args()
+    save_config(vars(args), "logs")
     config = AppConfig.from_env()
     if error := config.validate():
         raise ValueError(f"Invalid configuration: {error}")
