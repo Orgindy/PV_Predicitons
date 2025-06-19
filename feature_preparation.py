@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import xarray as xr
+import logging
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -10,6 +11,7 @@ from sklearn.feature_selection import mutual_info_regression
 import os
 import argparse
 from config import get_nc_dir
+from utils.feature_utils import filter_valid_columns, compute_band_ratios
 
 
 def parse_args():
@@ -118,15 +120,15 @@ def validate_parameters(input_file, output_file, drop_invalid=True):
     if drop_invalid:
         df.drop(index=invalid_rows, inplace=True)
         df.reset_index(drop=True, inplace=True)
-        print(f"✅ Dropped {len(invalid_rows)} rows with invalid values.")
+        logging.info(f"✅ Dropped {len(invalid_rows)} rows with invalid values.")
     else:
         df["Invalid_Row"] = 0
         df.loc[invalid_rows, "Invalid_Row"] = 1
-        print(f"⚠️ Flagged {len(invalid_rows)} rows as invalid.")
+        logging.warning(f"⚠️ Flagged {len(invalid_rows)} rows as invalid.")
     
     # Save the cleaned file
     df.to_csv(output_file, index=False)
-    print(f"✅ Validated data saved to {output_file}")
+    logging.info(f"✅ Validated data saved to {output_file}")
 
 def auto_generate_physics_pv(input_file, output_file, temp_coeff=-0.0045):
     """
@@ -146,7 +148,7 @@ def auto_generate_physics_pv(input_file, output_file, temp_coeff=-0.0045):
     # Check for required columns
     required_columns = ["GHI", "T_air", "RC_potential", "Total_band", "Red_band"]
     if not all(col in df.columns for col in required_columns):
-        print(f"❌ Missing required columns: {required_columns}")
+        logging.error(f"❌ Missing required columns: {required_columns}")
         return
     
     # Calculate PV potential using centralized implementation
@@ -160,7 +162,7 @@ def auto_generate_physics_pv(input_file, output_file, temp_coeff=-0.0045):
     
     # Save the updated file
     df.to_csv(output_file, index=False)
-    print(f"✅ Physics-based PV potential added and saved to {output_file}")
+    logging.info(f"✅ Physics-based PV potential added and saved to {output_file}")
 
 
 def compute_feature_weights(df, target_col='PV_Potential_physics'):
@@ -186,9 +188,9 @@ def compute_feature_weights(df, target_col='PV_Potential_physics'):
     total_weight = sum(weights.values())
     normalized_weights = {k: v / total_weight for k, v in weights.items()}
     
-    print("\n=== Feature Weights (Normalized) ===")
+    logging.info("\n=== Feature Weights (Normalized) ===")
     for k, v in normalized_weights.items():
-        print(f"{k}: {v:.4f}")
+        logging.info(f"{k}: {v:.4f}")
     
     return normalized_weights
 
@@ -206,7 +208,7 @@ def load_netcdf_data(netcdf_file, sample_fraction=0.1):
     Returns:
     - DataFrame with flattened spatial-temporal data
     """
-    print(f"Loading NetCDF data from {netcdf_file}...")
+    logging.info(f"Loading NetCDF data from {netcdf_file}...")
     
     # Load dataset
     with xr.open_dataset(netcdf_file) as ds:
@@ -219,16 +221,16 @@ def load_netcdf_data(netcdf_file, sample_fraction=0.1):
     # Sample data if too large
     if sample_fraction < 1.0:
         df = df.sample(frac=sample_fraction, random_state=42)
-        print(f"Sampled {len(df)} rows ({sample_fraction*100}% of data)")
+        logging.info(f"Sampled {len(df)} rows ({sample_fraction*100}% of data)")
     
-    print(f"Loaded {len(df)} data points")
-    print(f"Available columns: {list(df.columns)}")
+    logging.info(f"Loaded {len(df)} data points")
+    logging.info(f"Available columns: {list(df.columns)}")
     
     return df
 
 def calculate_pv_potential_netcdf(df):
     """Calculate PV potential directly from NetCDF data."""
-    print("Calculating PV potential from NetCDF data...")
+    logging.info("Calculating PV potential from NetCDF data...")
 
     # Map variables from NetCDF-specific names
     map_netcdf_variables(df)
@@ -242,11 +244,11 @@ def calculate_pv_potential_netcdf(df):
             df['Red_band'].values,
             df['Total_band'].values,
         )
-        print("✅ PV potential calculated")
+        logging.info("✅ PV potential calculated")
     else:
         missing = [c for c in ['GHI', 'T_air', 'RC_potential', 'Red_band', 'Total_band'] if c not in df.columns]
-        print("❌ Missing required variables for PV calculation")
-        print(f"Missing: {missing}")
+        logging.error("❌ Missing required variables for PV calculation")
+        logging.error(f"Missing: {missing}")
 
     return df
 
@@ -260,7 +262,7 @@ def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
     
     # Load initial data
     df = pd.read_csv(input_file)
-    print(f"Loaded {len(df)} rows from {input_file}")
+    logging.info(f"Loaded {len(df)} rows from {input_file}")
 
     # --- Data Validation ---
     # Save to temp file, validate, then reload
@@ -268,17 +270,22 @@ def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
     df.to_csv(temp_input, index=False)
     validate_parameters(temp_input, validated_file, drop_invalid=True)
     df = pd.read_csv(validated_file)
-    print(f"After validation: {len(df)} rows")
+    logging.info(f"After validation: {len(df)} rows")
 
     # --- Add physics-based PV potential ---
     auto_generate_physics_pv(validated_file, physics_file)
     df = pd.read_csv(physics_file)
-    print(f"Added physics-based PV potential")
+    logging.info("Added physics-based PV potential")
+    df, _ = compute_band_ratios(
+        df,
+        ['Blue_band', 'Green_band', 'Red_band', 'IR_band'],
+        total_col='Total_band'
+    )
 
     # Save final processed dataset
     final_output = os.path.join(results_dir, "merged_with_physics_pv.csv")
     df.to_csv(final_output, index=False)
-    print(f"✅ Final dataset saved to {final_output}")
+    logging.info(f"✅ Final dataset saved to {final_output}")
 
     # --- Feature Selection ---
     features = [
@@ -292,11 +299,11 @@ def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
     missing_features = [f for f in features if f not in df.columns]
     
     if missing_features:
-        print(f"⚠️ Missing features: {missing_features}")
-        print(f"✅ Available features: {available_features}")
+        logging.warning(f"⚠️ Missing features: {missing_features}")
+        logging.info(f"✅ Available features: {available_features}")
     
     # Use only available features
-    X = df[available_features]
+    X = filter_valid_columns(df, available_features)
     y = df['PV_Potential_physics']
 
     # --- Train/Test Split ---
@@ -308,15 +315,15 @@ def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
 
     # --- Evaluation ---
     y_pred = model.predict(X_test)
-    print("\n=== Model Performance ===")
-    print(f"R²: {r2_score(y_test, y_pred):.4f}")
-    print(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False):.2f}")
-    print(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}")
+    logging.info("\n=== Model Performance ===")
+    logging.info(f"R²: {r2_score(y_test, y_pred):.4f}")
+    logging.info(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False):.2f}")
+    logging.info(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}")
 
     # --- Save model ---
     model_path = os.path.join(results_dir, "models", "rf_pv_model.joblib")
     joblib.dump(model, model_path)
-    print(f"💾 Random Forest model saved to: {model_path}")
+    logging.info(f"💾 Random Forest model saved to: {model_path}")
 
     # --- Feature Importance Plot ---
     importances = model.feature_importances_
@@ -332,14 +339,14 @@ def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
     plt.tight_layout()
     plt.savefig(os.path.join(results_dir, "feature_importance_plot.png"), dpi=300)
     plt.close()
-    print(f"📊 Feature importance plot saved to {os.path.join(results_dir, 'feature_importance_plot.png')}")
+    logging.info(f"📊 Feature importance plot saved to {os.path.join(results_dir, 'feature_importance_plot.png')}")
 
     # Clean up temporary files
     for temp_file in [temp_input]:
         if os.path.exists(temp_file):
             os.remove(temp_file)
     
-    print("\n✅ CSV-based feature preparation completed successfully!")
+    logging.info("\n✅ CSV-based feature preparation completed successfully!")
 
 def main_netcdf_workflow(netcdf_file, results_dir):
     """NetCDF-based workflow."""
@@ -353,11 +360,16 @@ def main_netcdf_workflow(netcdf_file, results_dir):
     
     # Calculate PV potential
     df = calculate_pv_potential_netcdf(df)
+    df, _ = compute_band_ratios(
+        df,
+        ['Blue_band', 'Green_band', 'Red_band', 'IR_band'],
+        total_col='Total_band'
+    )
     
     # Save processed data for reference
     processed_csv = os.path.join(results_dir, "processed_netcdf_data.csv")
     df.to_csv(processed_csv, index=False)
-    print(f"✅ Processed data saved to {processed_csv}")
+    logging.info(f"✅ Processed data saved to {processed_csv}")
     
     # Feature selection - use available columns
     potential_features = [
@@ -367,17 +379,17 @@ def main_netcdf_workflow(netcdf_file, results_dir):
     
     # Check which features are actually available
     available_features = [f for f in potential_features if f in df.columns]
-    print(f"Available features: {available_features}")
+    logging.info(f"Available features: {available_features}")
     
     if 'PV_Potential' not in df.columns:
-        print("❌ PV_Potential not calculated - cannot proceed with ML")
+        logging.error("❌ PV_Potential not calculated - cannot proceed with ML")
         return
     
     # Prepare for ML
-    X = df[available_features].dropna()
+    X = filter_valid_columns(df, available_features).dropna()
     y = df.loc[X.index, 'PV_Potential']
     
-    print(f"ML dataset: {len(X)} samples, {len(available_features)} features")
+    logging.info(f"ML dataset: {len(X)} samples, {len(available_features)} features")
     
     # Train/Test Split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -388,15 +400,15 @@ def main_netcdf_workflow(netcdf_file, results_dir):
     
     # Evaluation
     y_pred = model.predict(X_test)
-    print("\n=== Model Performance ===")
-    print(f"R²: {r2_score(y_test, y_pred):.4f}")
-    print(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False):.2f}")
-    print(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}")
+    logging.info("\n=== Model Performance ===")
+    logging.info(f"R²: {r2_score(y_test, y_pred):.4f}")
+    logging.info(f"RMSE: {mean_squared_error(y_test, y_pred, squared=False):.2f}")
+    logging.info(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}")
     
     # Save model
     model_path = os.path.join(results_dir, "models", "rf_pv_model_netcdf.joblib")
     joblib.dump(model, model_path)
-    print(f"💾 Model saved to: {model_path}")
+    logging.info(f"💾 Model saved to: {model_path}")
     
     # Feature importance plot
     if len(available_features) > 0:
@@ -413,9 +425,9 @@ def main_netcdf_workflow(netcdf_file, results_dir):
         plot_path = os.path.join(results_dir, "feature_importance_netcdf.png")
         plt.savefig(plot_path, dpi=300, bbox_inches='tight')
         plt.close()
-        print(f"📊 Feature importance plot saved to {plot_path}")
+        logging.info(f"📊 Feature importance plot saved to {plot_path}")
     
-    print("\n✅ NetCDF-based feature preparation completed!")
+    logging.info("\n✅ NetCDF-based feature preparation completed!")
 
 def main():
     """Entry point for command line execution."""
@@ -426,7 +438,7 @@ def main():
         try:
             df_db = read_table(args.db_table, db_url=args.db_url)
         except Exception as e:
-            print(f"❌ Failed to read table {args.db_table}: {e}")
+            logging.error(f"❌ Failed to read table {args.db_table}: {e}")
             return
         temp_path = "db_input.csv"
         df_db.to_csv(temp_path, index=False)
@@ -438,15 +450,15 @@ def main():
         if os.path.exists(temp_path):
             os.remove(temp_path)
     elif os.path.exists(args.netcdf_file):
-        print("🌐 NetCDF file found - running NetCDF workflow")
+        logging.info("🌐 NetCDF file found - running NetCDF workflow")
         main_netcdf_workflow(args.netcdf_file, args.results_dir)
     elif os.path.exists(args.input_file):
-        print("📊 CSV file found - running CSV workflow")
+        logging.info("📊 CSV file found - running CSV workflow")
         main_csv_workflow(args.input_file, args.validated_file, args.physics_file, args.results_dir)
     else:
-        print("❌ Neither NetCDF nor CSV file found")
-        print(f"Looking for NetCDF: {args.netcdf_file}")
-        print(f"Looking for CSV: {args.input_file}")
+        logging.error("❌ Neither NetCDF nor CSV file found")
+        logging.info(f"Looking for NetCDF: {args.netcdf_file}")
+        logging.info(f"Looking for CSV: {args.input_file}")
 
 if __name__ == "__main__":
     main()

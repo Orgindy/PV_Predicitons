@@ -1,5 +1,8 @@
 import os
+import logging
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 REQUIRED_DIRS = [
     "data",
@@ -13,5 +16,5 @@ REQUIRED_DIRS = [
 for d in REQUIRED_DIRS:
     path = Path(d)
     path.mkdir(parents=True, exist_ok=True)
-    print(f"Created directory: {path}")
+    logging.info(f"Created directory: {path}")
 
