@@ -50,23 +50,27 @@ python scripts/check_imports.py
 python scripts/check_all_imports.py
 ```
 
-## NetCDF data directory
+## Path configuration
 
-Many scripts read NetCDF files from a shared location. Set the directory
-via the `NC_DATA_DIR` environment variable or create a `config.yaml` file
-with a key `nc_data_dir`. An example file is provided:
+All file locations are now managed through a single `config.yaml` in the
+project root. Create this file and specify the paths to your datasets and
+output folders:
 
 ```bash
 cp config.yaml.example config.yaml
-echo "nc_data_dir: /path/to/my/netcdf" > config.yaml
-# Example for Windows users
-# echo "nc_data_dir: C:\Users\gindi002\DATASET\Era5_GRIB_NEW_dataset_2023-2019_and_more_future" > config.yaml
-# (This Windows path is also included as a comment in config.yaml.example.)
+cat <<EOF > config.yaml
+era5_path: /path/to/netcdf_files
+merged_data_path: /path/to/merged_dataset.csv
+pv_database_path: /path/to/pv_database.csv
+results_path: /path/to/results/
+smarts_inp_path: /path/to/smarts_inp_files/
+smarts_out_path: /path/to/smarts_out_files/
+shapefile_path: /path/to/koppen_shapefile.shp
+EOF
 ```
 
-The environment variable takes precedence. `config.yaml` is ignored by Git so you
-can adjust it locally. Individual scripts still
-allow `--netcdf-file` arguments to override this location for a single run.
+`config.yaml` is ignored by Git so you can customize paths locally. The `NC_DATA_DIR`
+environment variable still overrides `era5_path` if set.
 
 ## Input files
 

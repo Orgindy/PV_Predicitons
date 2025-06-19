@@ -69,20 +69,32 @@ class TrainingConfig:
         return cls(**{**cls().__dict__, **data.get("training", {})})
 
 
+@dataclass
+class PathConfig:
+    """File system paths used across the project."""
+
+    era5_path: str = "netcdf_files"
+    merged_data_path: str = "merged_dataset.csv"
+    pv_database_path: str = "pv_database.csv"
+    results_path: str = "results"
+    smarts_inp_path: str = "smarts_inp_files"
+    smarts_out_path: str = "smarts_out_files"
+    shapefile_path: str = "koppen_shapefile.shp"
+
+    @classmethod
+    def from_yaml(cls, path: Path = Path("config.yaml")) -> "PathConfig":
+        if not path.exists():
+            return cls()
+        with path.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        return cls(**{**cls().__dict__, **data})
+
+
 def get_nc_dir() -> str:
     """Return directory containing NetCDF files."""
     env_dir = os.getenv("NC_DATA_DIR")
     if env_dir:
         return env_dir
 
-    config_path = Path(__file__).with_name("config.yaml")
-    if config_path.exists():
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            if isinstance(data, Dict) and data.get("nc_data_dir"):
-                return str(data["nc_data_dir"])
-        except (OSError, yaml.YAMLError) as e:
-            print(f"Warning: could not read {config_path}: {e}")
-
-    return "netcdf_files"
+    cfg = PathConfig.from_yaml(Path("config.yaml"))
+    return cfg.era5_path

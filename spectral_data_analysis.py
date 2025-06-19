@@ -9,6 +9,7 @@ output from SMARTS simulations.
 import os
 import argparse
 from pathlib import Path
+from config import PathConfig
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -889,12 +890,12 @@ def main():
     parser = argparse.ArgumentParser(description="Process SMARTS spectral output")
     parser.add_argument(
         "--input-folder",
-        default="smarts_out_files",
+        default=PathConfig.from_yaml(Path("config.yaml")).smarts_out_path,
         help="Directory with SMARTS .ext.txt files",
     )
     parser.add_argument(
         "--output-folder",
-        default="spectral_analysis_output",
+        default=os.path.join(PathConfig.from_yaml(Path("config.yaml")).results_path, "spectral_analysis_output"),
         help="Directory for analysis output",
     )
     args = parser.parse_args()

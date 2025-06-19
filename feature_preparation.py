@@ -10,36 +10,38 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.feature_selection import mutual_info_regression
 import os
 import argparse
-from config import get_nc_dir
+from pathlib import Path
+from config import get_nc_dir, PathConfig
 from utils.feature_utils import filter_valid_columns, compute_band_ratios
 
 
 def parse_args():
     """Parse command line arguments for file paths."""
     parser = argparse.ArgumentParser(description="Prepare features for PV model")
+    cfg = PathConfig.from_yaml(Path("config.yaml"))
     parser.add_argument(
         "--input-file",
-        default="data/merged_dataset.csv",
+        default=cfg.merged_data_path,
         help="Path to merged dataset CSV",
     )
     parser.add_argument(
         "--validated-file",
-        default="data/validated_dataset.csv",
+        default=os.path.join(cfg.results_path, "validated_dataset.csv"),
         help="Path to save validated CSV",
     )
     parser.add_argument(
         "--physics-file",
-        default="data/physics_dataset.csv",
+        default=os.path.join(cfg.results_path, "physics_dataset.csv"),
         help="Path to save dataset with physics-based PV potential",
     )
     parser.add_argument(
         "--netcdf-file",
-        default=os.path.join(get_nc_dir(), "ERA5_daily.nc"),
+        default=os.path.join(cfg.era5_path, "ERA5_daily.nc"),
         help="Path to processed ERA5 NetCDF file",
     )
     parser.add_argument(
         "--results-dir",
-        default="results",
+        default=cfg.results_path,
         help="Directory where results will be written",
     )
     parser.add_argument(

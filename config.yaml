@@ -1,0 +1,7 @@
+era5_path: "C:/Users/gindi002/DATASET/Era5_GRIB_NEW_dataset_2023-2019_and_more_future"
+merged_data_path: "C:/Users/gindi002/DATASET/merged_dataset.csv"
+pv_database_path: "C:/Users/gindi002/DATASET/pv_database.csv"
+results_path: "C:/Users/gindi002/PROJECT_RESULTS/"
+smarts_inp_path: "C:/Users/gindi002/DATASET/smarts_inp_files/"
+smarts_out_path: "C:/Users/gindi002/DATASET/smarts_out_files/"
+shapefile_path: "C:/Users/gindi002/DATASET/koppen_shapefile.shp"

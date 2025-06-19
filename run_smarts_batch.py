@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 from dataclasses import dataclass
 import psutil
+from config import PathConfig
 
 
 @dataclass
@@ -37,10 +38,11 @@ class BatchConfig:
 # === USER CONFIG (overridden by CLI) ===
 def parse_args():
     """Return config-based arguments (CLI removed)."""
+    cfg = PathConfig.from_yaml(Path("config.yaml"))
     return argparse.Namespace(
         smarts_exe="smarts295bat.exe",
-        inp_dir="smarts_inp_files",
-        out_dir="smarts_out_files",
+        inp_dir=cfg.smarts_inp_path,
+        out_dir=cfg.smarts_out_path,
         timeout=300,
     )
 
