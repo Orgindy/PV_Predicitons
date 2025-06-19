@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 import os
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+from utils import plot_with_style, save_fig, apply_plot_style
 
 def load_and_scale_data(csv_path, feature_columns):
     """Load and scale data using the provided feature columns."""
@@ -132,50 +133,51 @@ def main():
 def create_comparison_plots(df, X, scores):
     """Create PCA and silhouette score comparison plots."""
     try:
+        apply_plot_style()
         # PCA Visualization
         pca = PCA(n_components=2)
         X_pca = pca.fit_transform(X)
-        
-        plt.figure(figsize=(12, 5))
-        
+
+        fig, axs = plt.subplots(1, 2, figsize=(10, 6))
+
         # Plot 1: PCA comparison
-        plt.subplot(1, 2, 1)
+        ax1 = axs[0]
         colors = ['red', 'blue', 'green', 'orange']
         methods = ["kmeans", "gmm", "dbscan", "agglomerative"]
-        
+
         for i, method in enumerate(methods):
             col = f"Cluster_{method}"
             if col in df.columns:
-                plt.scatter(X_pca[:, 0], X_pca[:, 1], c=df[col], 
-                           label=method.upper(), alpha=0.6, s=20, 
-                           cmap='tab10')
-        
-        plt.title("PCA of Climate Features by Clustering Method")
-        plt.xlabel("Principal Component 1")
-        plt.ylabel("Principal Component 2")
-        plt.grid(True, alpha=0.3)
-        
+                ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=df[col],
+                           label=method.upper(), alpha=0.6, s=20,
+                           cmap='viridis')
+
+        ax1.set_title("PCA of Climate Features by Clustering Method")
+        ax1.set_xlabel("Principal Component 1")
+        ax1.set_ylabel("Principal Component 2")
+        ax1.grid(True, alpha=0.3)
+        ax1.legend(fontsize=11, loc='upper right')
+
         # Plot 2: Silhouette scores
-        plt.subplot(1, 2, 2)
+        ax2 = axs[1]
         methods = [method for method, _ in scores]
         silhouettes = [score if score is not None else 0 for _, score in scores]
-        
-        bars = plt.bar(methods, silhouettes, color="skyblue", edgecolor="black")
-        plt.title("Silhouette Scores by Clustering Method")
-        plt.ylabel("Silhouette Score")
-        plt.ylim(0, max(silhouettes) * 1.1 if max(silhouettes) > 0 else 1)
-        plt.grid(axis="y", alpha=0.3)
-        
+
+        bars = ax2.bar(methods, silhouettes, color="skyblue", edgecolor="black")
+        ax2.set_title("Silhouette Scores by Clustering Method")
+        ax2.set_ylabel("Silhouette Score")
+        ax2.set_ylim(0, max(silhouettes) * 1.1 if max(silhouettes) > 0 else 1)
+        ax2.grid(axis="y", alpha=0.3)
+
         # Add score labels on bars
         for bar, score in zip(bars, silhouettes):
             if score > 0:
-                plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, 
+                ax2.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01,
                         f"{score:.3f}", ha='center', va='bottom', fontsize=10)
-        
-        plt.tight_layout()
-        plt.savefig("clustering_comparison_plots.png", dpi=300, bbox_inches='tight')
-        plt.close()
-        print("✅ Saved comparison plots: clustering_comparison_plots.png")
+
+        save_fig('clustering_comparison_plots.png', fig)
+        plt.close(fig)
+        print("✅ Saved comparison plots: figures/clustering_comparison_plots.png")
         
     except Exception as e:
         print(f"⚠️ Could not create plots: {e}")

@@ -5,6 +5,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib.pyplot as plt
 import seaborn as sns
+from utils import apply_plot_style, plot_with_style, save_fig
 import contextily as ctx
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -56,12 +57,13 @@ def overlay_technology_matches(geo_df, tech_col='Best_Technology', cluster_col='
 
     geo_df = geo_df.to_crs(epsg=3857)  # Web Mercator for plotting with basemaps
 
-    fig, ax = plt.subplots(figsize=(12, 10))
+    apply_plot_style()
+    fig, ax = plt.subplots(figsize=(10, 6))
     sns.set(style="white")
 
-    tech_palette = sns.color_palette("tab10", n_colors=geo_df[tech_col].nunique())
+    tech_palette = sns.color_palette("viridis", n_colors=geo_df[tech_col].nunique())
 
-    geo_df.plot(column=tech_col, ax=ax, legend=True, markersize=35, edgecolor='black', cmap='tab10')
+    geo_df.plot(column=tech_col, ax=ax, legend=True, markersize=35, edgecolor='black', cmap='viridis')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
     except Exception as e:
@@ -69,11 +71,9 @@ def overlay_technology_matches(geo_df, tech_col='Best_Technology', cluster_col='
 
     ax.set_title(title, fontsize=14)
     ax.set_axis_off()
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
-
-    print(f"🖼️ Saved PV technology overlay map to: {output_path}")
+    output_file = save_fig(os.path.basename(output_path), fig)
+    plt.close(fig)
+    print(f"🖼️ Saved PV technology overlay map to: {output_file}")
 
 def export_geojson(df, output_path='results/maps/final_clustered_map.geojson',
                    lat_col='latitude', lon_col='longitude', crs_epsg=4326):
@@ -234,16 +234,18 @@ def assign_clusters_to_dataframe(df, labels, column_name='Cluster_ID'):
 
 def plot_clusters_map(df, lat_col='latitude', lon_col='longitude', cluster_col='Cluster_ID', title='PV Performance Clusters'):
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[lon_col], df[lat_col]), crs="EPSG:4326").to_crs(epsg=3857)
-    fig, ax = plt.subplots(figsize=(12, 8))
-    gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=35, edgecolor='k')
+    apply_plot_style()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    gdf.plot(ax=ax, column=cluster_col, cmap='viridis', legend=True, markersize=35, edgecolor='k')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
     except Exception as e:
         print("Basemap could not be loaded.")
     ax.set_title(title)
     ax.set_axis_off()
-    plt.tight_layout()
-    plt.show()
+    output_file = save_fig('cluster_map.png', fig)
+    plt.close(fig)
+    print(f"🖼️ Saved cluster map to: {output_file}")
 
 # -----------------------------
 # PV Technology Mapping
@@ -259,11 +261,12 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
     ).to_crs(epsg=3857)
 
     # Plot
-    fig, ax = plt.subplots(figsize=(12, 8))
+    apply_plot_style()
+    fig, ax = plt.subplots(figsize=(10, 6))
     gdf.plot(
         ax=ax,
         column='Best_Technology',
-        cmap='tab20',
+        cmap='plasma',
         legend=True,
         markersize=30,
         edgecolor='k',
@@ -277,7 +280,9 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
 
     ax.set_title("Best Matched PV Technology by Location", fontsize=15)
     ax.set_axis_off()
-    plt.show()
+    output_file = save_fig('technology_matches.png', fig)
+    plt.close(fig)
+    print(f"🖼️ Saved technology match map to: {output_file}")
 
 
 def main_clustering_pipeline(input_file='merged_dataset.csv', output_file='clustered_dataset.csv', n_clusters=5):
@@ -350,7 +355,7 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
     - lat_col, lon_col: column names for coordinates
     - output_path: where to save the PNG file
     """
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    os.makedirs('figures', exist_ok=True)
 
     if 'Prediction_Uncertainty' not in df.columns:
         print("⚠️ No 'Prediction_Uncertainty' column found. Skipping plot.")
@@ -358,8 +363,9 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
 
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[lon_col], df[lat_col]), crs="EPSG:4326").to_crs(epsg=3857)
 
-    fig, ax = plt.subplots(figsize=(14, 10))
-    gdf.plot(ax=ax, column='Prediction_Uncertainty', cmap='coolwarm', legend=True, edgecolor='black', markersize=30)
+    apply_plot_style()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    gdf.plot(ax=ax, column='Prediction_Uncertainty', cmap='plasma', legend=True, edgecolor='black', markersize=30)
 
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
@@ -368,10 +374,9 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
 
     ax.set_title("Random Forest Prediction Uncertainty Map", fontsize=14)
     ax.set_axis_off()
-    plt.tight_layout()
-    plt.savefig(output_path)
-    plt.close()
-    print(f"🖼️ Saved prediction uncertainty map to: {output_path}")
+    output_file = save_fig(os.path.basename(output_path), fig)
+    plt.close(fig)
+    print(f"🖼️ Saved prediction uncertainty map to: {output_file}")
 
 
 def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology', output_path='results/maps/rc_pv_overlay.png'):
@@ -381,17 +386,18 @@ def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology'
 
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs="EPSG:4326").to_crs(epsg=3857)
 
-    fig, ax = plt.subplots(figsize=(14, 10))
+    apply_plot_style()
+    fig, ax = plt.subplots(figsize=(10, 6))
     gdf.plot(ax=ax, column=rc_col, cmap='Pastel1', markersize=10, legend=True, alpha=0.6, edgecolor='none')
 
-    gdf.plot(ax=ax, column=tech_col, cmap='tab10', markersize=6, legend=True, alpha=1, edgecolor='k', marker='x')
+    gdf.plot(ax=ax, column=tech_col, cmap='plasma', markersize=6, legend=True, alpha=1, edgecolor='k', marker='x')
 
     ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
     ax.set_title("Overlay: RC Clusters and Best PV Technologies", fontsize=14)
     ax.set_axis_off()
-    plt.tight_layout()
-    plt.savefig(output_path)
-    plt.close()
+    output_file = save_fig(os.path.basename(output_path), fig)
+    plt.close(fig)
+    print(f"🖼️ Saved RC/PV overlay map to: {output_file}")
 
 if __name__ == "__main__":
     import argparse, os

@@ -11,6 +11,7 @@ from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from utils import apply_plot_style, plot_with_style, save_fig
 import contextily as ctx
 import glob
 from pathlib import Path
@@ -127,18 +128,15 @@ def train_random_forest(X_scaled, y, feature_names, test_size=0.2, random_state=
         'Importance': model.feature_importances_
     }).sort_values(by='Importance', ascending=False)
 
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
-    plt.title("Feature Importance (Random Forest)")
-    plt.tight_layout()
-
+    apply_plot_style()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(x='Importance', y='Feature', data=feature_importance_df, ax=ax)
+    ax.set_title("Feature Importance (Random Forest)")
+    output_file = output_plot if output_plot else 'feature_importance.png'
+    saved = save_fig(os.path.basename(output_file), fig)
     if output_plot:
-        plt.savefig(output_plot, dpi=300)
-        print(f"📊 Feature importance plot saved to: {output_plot}")
-    else:
-        plt.show()
-
-    plt.close()
+        print(f"📊 Feature importance plot saved to: {saved}")
+    plt.close(fig)
 
     return model, X_train, X_test, y_train, y_test, y_pred, model_path
 
@@ -304,16 +302,18 @@ def match_technology_to_clusters(cluster_spectra_df, pv_profiles, temp_col='T_ai
 
 def plot_clusters_map(df, lat_col='latitude', lon_col='longitude', cluster_col='Cluster_ID', title='PV Performance Clusters'):
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[lon_col], df[lat_col]), crs="EPSG:4326").to_crs(epsg=3857)
-    fig, ax = plt.subplots(figsize=(12, 8))
-    gdf.plot(ax=ax, column=cluster_col, cmap='tab10', legend=True, markersize=35, edgecolor='k')
+    apply_plot_style()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    gdf.plot(ax=ax, column=cluster_col, cmap='viridis', legend=True, markersize=35, edgecolor='k')
     try:
         ctx.add_basemap(ax, source=ctx.providers.Stamen.TonerLite)
     except Exception as e:
         print("Basemap could not be loaded.")
     ax.set_title(title)
     ax.set_axis_off()
-    plt.tight_layout()
-    plt.show()
+    output_file = save_fig('cluster_map.png', fig)
+    plt.close(fig)
+    print(f"🖼️ Saved cluster map to: {output_file}")
 
 
 def prepare_features_for_clustering(df, feature_cols):
@@ -559,12 +559,12 @@ def summarize_and_plot_multi_year_clusters(summary_df, output_dir='results/clust
 
     # Plot best technology frequency per year
     tech_freq = summary_df.groupby(['Year', 'Best_Technology']).size().reset_index(name='Count')
-    plt.figure(figsize=(10, 6))
-    sns.barplot(data=tech_freq, x='Year', y='Count', hue='Best_Technology')
-    plt.title("Best PV Technology Frequency per Year")
-    plt.tight_layout()
-    plt.savefig(output_dir / 'tech_frequency_per_year.png')
-    plt.close()
+    apply_plot_style()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=tech_freq, x='Year', y='Count', hue='Best_Technology', ax=ax)
+    ax.set_title("Best PV Technology Frequency per Year")
+    output_file = save_fig('tech_frequency_per_year.png', fig)
+    plt.close(fig)
 
     # Compute basic yearly averages per tech
     avg_scores = summary_df.groupby(['Year', 'Best_Technology']).mean(numeric_only=True).reset_index()
