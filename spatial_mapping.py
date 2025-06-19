@@ -39,9 +39,13 @@ def add_land_mask(df, lat_col='latitude', lon_col='longitude', world_shapefile='
 
     return gdf_land
 
-def overlay_technology_matches(geo_df, tech_col='Best_Technology', cluster_col='Cluster_ID',
-                                title='Optimal PV Technologies by Location',
-                                output_path='results/maps/pv_technology_map.png'):
+def overlay_technology_matches(
+    geo_df,
+    tech_col='Best_Technology',
+    cluster_col='Cluster_ID',
+    title='Optimal PV Technologies by Location',
+    output_path=os.path.join(get_path('results_path'), 'maps', 'pv_technology_map.png'),
+):
     """
     Plot map of matched PV technologies by location.
 
@@ -78,8 +82,13 @@ def overlay_technology_matches(geo_df, tech_col='Best_Technology', cluster_col='
 
     print(f"🖼️ Saved PV technology overlay map to: {output_path}")
 
-def export_geojson(df, output_path='results/maps/final_clustered_map.geojson',
-                   lat_col='latitude', lon_col='longitude', crs_epsg=4326):
+def export_geojson(
+    df,
+    output_path=os.path.join(get_path('results_path'), 'maps', 'final_clustered_map.geojson'),
+    lat_col='latitude',
+    lon_col='longitude',
+    crs_epsg=4326,
+):
     """
     Export a DataFrame with latitude and longitude to a GeoJSON file.
 
@@ -344,7 +353,12 @@ def main_clustering_pipeline(input_file='merged_dataset.csv', output_file='clust
     
     return df_clustered
 
-def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', output_path='results/maps/prediction_uncertainty_map.png'):
+def plot_prediction_uncertainty(
+    df,
+    lat_col='latitude',
+    lon_col='longitude',
+    output_path=os.path.join(get_path('results_path'), 'maps', 'prediction_uncertainty_map.png'),
+):
     """
     Plot map of prediction uncertainty from Random Forest model.
 
@@ -377,7 +391,12 @@ def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', out
     print(f"🖼️ Saved prediction uncertainty map to: {output_path}")
 
 
-def plot_overlay_rc_pv_zones(df, rc_col='RC_Cluster', tech_col='Best_Technology', output_path='results/maps/rc_pv_overlay.png'):
+def plot_overlay_rc_pv_zones(
+    df,
+    rc_col='RC_Cluster',
+    tech_col='Best_Technology',
+    output_path=os.path.join(get_path('results_path'), 'maps', 'rc_pv_overlay.png'),
+):
     import geopandas as gpd
     import matplotlib.pyplot as plt
     import contextily as ctx

@@ -12,6 +12,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from matplotlib import ticker
 from utils.feature_utils import compute_cluster_spectra
+from config import get_path
 
 from shapely.geometry import Point
 import rasterio
@@ -32,8 +33,9 @@ except ImportError:
         RH = 100.0 * (e_d / e_s)
         return np.clip(RH, 0, 100)
         
-def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
-                               output_path="data/clustered_dataset_rh_albedo.csv",
+def prepare_clustered_dataset(
+    input_path=os.path.join(get_path("results_path"), "clustered_dataset_rh.csv"),
+    output_path=os.path.join(get_path("results_path"), "clustered_dataset_rh_albedo.csv"),
                                db_url=None,
                                db_table=None):
     """
@@ -48,7 +50,11 @@ def prepare_clustered_dataset(input_path="data/clustered_dataset_rh.csv",
 
         # Check if file exists, try alternatives
         if not os.path.exists(input_path):
-            alternative_paths = ["clustered_dataset.csv", "data/clustered_dataset.csv", "merged_dataset.csv"]
+            alternative_paths = [
+                os.path.join(get_path("results_path"), "clustered_dataset.csv"),
+                os.path.join(get_path("results_path"), "data", "clustered_dataset.csv"),
+                get_path("merged_data_path"),
+            ]
             input_path = None
             for alt_path in alternative_paths:
                 if os.path.exists(alt_path):
@@ -307,11 +313,13 @@ def get_pv_cell_profiles():
     return pv_profiles
 
 
-def compute_pv_potential_by_cluster_year(df, 
-                                         cluster_col='Cluster_ID',
-                                         year_col='year',
-                                         pv_col='Predicted_PV_Potential',
-                                         output_path='results/pv_potential_by_cluster_year.csv'):
+def compute_pv_potential_by_cluster_year(
+    df,
+    cluster_col='Cluster_ID',
+    year_col='year',
+    pv_col='Predicted_PV_Potential',
+    output_path=os.path.join(get_path("results_path"), "pv_potential_by_cluster_year.csv"),
+):
     """
     Aggregate total and mean PV potential per cluster per year.
 
@@ -452,7 +460,11 @@ def label_clusters(df, cluster_col='Cluster_ID'):
     df['Cluster_Label'] = df[cluster_col].map(cluster_label_map).fillna("Unlabeled")
     return df
 
-def compute_cluster_summary(df, cluster_col='Cluster_ID', output_path='results/cluster_summary.csv'):
+def compute_cluster_summary(
+    df,
+    cluster_col='Cluster_ID',
+    output_path=os.path.join(get_path("results_path"), "cluster_summary.csv"),
+):
     """
     Compute summary statistics for each cluster and save to CSV.
 
@@ -487,7 +499,7 @@ def plot_prediction_uncertainty_with_contours(
     lat_col='latitude',
     lon_col='longitude',
     value_col='Prediction_Uncertainty',
-    output_path='results/maps/prediction_uncertainty_map_contours.png',
+    output_path=os.path.join(get_path("results_path"), "maps", "prediction_uncertainty_map_contours.png"),
     contour_levels=10,
     use_hatching=False
 ):
@@ -625,17 +637,23 @@ def plot_technology_matches(df_clustered, match_df, lat_col='latitude', lon_col=
         ax.set_axis_off()
         apply_standard_plot_style(ax, title="Best Matched PV Technology by Location")
 
-        os.makedirs("results/maps", exist_ok=True)
-        save_figure(fig, "technology_matches.png", folder="results/maps")
-        logging.info("✅ Technology matching map saved to results/maps/technology_matches.png")
+        results_dir = get_path("results_path")
+        os.makedirs(os.path.join(results_dir, "maps"), exist_ok=True)
+        save_figure(fig, "technology_matches.png", folder=os.path.join(results_dir, "maps"))
+        logging.info("✅ Technology matching map saved")
         
     except Exception as e:
         logging.info(f"⚠️ Could not create map: {e}")
         
-def plot_clusters_map(df_clustered, lat_col='latitude', lon_col='longitude',
-                      cluster_col='Cluster_ID', title='PV Performance Clusters',
-                      borders_path='data/borders/ne_10m_admin_0_countries.shp',
-                      eu_only=True):
+def plot_clusters_map(
+    df_clustered,
+    lat_col='latitude',
+    lon_col='longitude',
+    cluster_col='Cluster_ID',
+    title='PV Performance Clusters',
+    borders_path=get_path('shapefile_path'),
+    eu_only=True,
+):
     """
     Plot clusters over EU map with country borders, excluding sea areas.
 
@@ -695,7 +713,12 @@ def plot_clusters_map(df_clustered, lat_col='latitude', lon_col='longitude',
     apply_standard_plot_style(ax, title=title)
     plt.show()
 
-def plot_prediction_uncertainty(df, lat_col='latitude', lon_col='longitude', output_path='results/maps/prediction_uncertainty_map.png'):
+def plot_prediction_uncertainty(
+    df,
+    lat_col='latitude',
+    lon_col='longitude',
+    output_path=os.path.join(get_path("results_path"), "maps", "prediction_uncertainty_map.png"),
+):
     """
     Plot map of prediction uncertainty from Random Forest model.
 
@@ -758,8 +781,14 @@ def add_koppen_geiger(df, kg_raster='DATASET/kg_classification.tif', lat_col='la
     return df_out
 
 
-def plot_clusters_with_kg(df, kg_raster='DATASET/kg_classification.tif', lat_col='latitude', lon_col='longitude',
-                          cluster_col='Cluster_ID', output_path='figures/cluster_map_with_kg.png'):
+def plot_clusters_with_kg(
+    df,
+    kg_raster='DATASET/kg_classification.tif',
+    lat_col='latitude',
+    lon_col='longitude',
+    cluster_col='Cluster_ID',
+    output_path=os.path.join(get_path("results_path"), "figures", "cluster_map_with_kg.png"),
+):
     """Overlay cluster IDs with Köppen–Geiger zones on a map."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     if not os.path.exists(kg_raster):
@@ -779,8 +808,8 @@ def plot_clusters_with_kg(df, kg_raster='DATASET/kg_classification.tif', lat_col
         logging.info(f"✅ Saved map with KG overlay to {output_path}")
 
 def main_matching_pipeline(
-    clustered_data_path='data/clustered_dataset_rh_albedo.csv',
-    output_file='matched_dataset.csv',
+    clustered_data_path=os.path.join(get_path("results_path"), "data", "clustered_dataset_rh_albedo.csv"),
+    output_file=os.path.join(get_path("results_path"), "matched_dataset.csv"),
     k_range=range(2, 10),
     db_url=None,
     db_table=None,
@@ -792,9 +821,10 @@ def main_matching_pipeline(
     logging.info("\n=== PV Technology Matching Pipeline ===")
     
     # Create output directories
-    os.makedirs("results", exist_ok=True)
-    os.makedirs("results/maps", exist_ok=True)
-    os.makedirs("results/models", exist_ok=True)
+    results_dir = get_path("results_path")
+    os.makedirs(results_dir, exist_ok=True)
+    os.makedirs(os.path.join(results_dir, "maps"), exist_ok=True)
+    os.makedirs(os.path.join(results_dir, "models"), exist_ok=True)
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     # Step 1: Prepare dataset
@@ -851,15 +881,21 @@ def main_matching_pipeline(
     #plot_prediction_uncertainty_with_contours(df_final, use_hatching=True)
 
     # Optional: Save to CSV
-    adjusted_yield_df.to_csv("results/adjusted_yield_table.csv", index=False)
-    logging.info("✅ Adjusted PV yield table saved to results/adjusted_yield_table.csv")
+    adjusted_yield_df.to_csv(
+        os.path.join(get_path("results_path"), "adjusted_yield_table.csv"),
+        index=False,
+    )
+    logging.info("✅ Adjusted PV yield table saved")
     
     df_final = df_final.merge(df_clustered[['Cluster_ID', 'Cluster_Label']], on='Cluster_ID', how='left')
 
     logging.info("\n=== Plotting Final Technology Recommendation Map ===")
     # plot_technology_matches no longer requires a shapefile path
     plot_technology_matches(df_final, match_df, cluster_col='Cluster_ID')
-    plot_prediction_uncertainty(df_final, output_path='results/maps/prediction_uncertainty_map.png')
+    plot_prediction_uncertainty(
+        df_final,
+        output_path=os.path.join(get_path("results_path"), "maps", "prediction_uncertainty_map.png"),
+    )
     
     compute_cluster_summary(df_final)
     compute_pv_potential_by_cluster_year(df_final)
@@ -867,8 +903,14 @@ def main_matching_pipeline(
     # --- Köppen–Geiger integration ---
     try:
         df_with_kg = add_koppen_geiger(df_final)
-        df_with_kg.to_csv('clustered_dataset_with_kg.csv', index=False)
-        plot_clusters_with_kg(df_with_kg, output_path='figures/cluster_map_with_kg.png')
+        df_with_kg.to_csv(
+            os.path.join(get_path("results_path"), "clustered_dataset_with_kg.csv"),
+            index=False,
+        )
+        plot_clusters_with_kg(
+            df_with_kg,
+            output_path=os.path.join(get_path("results_path"), "figures", "cluster_map_with_kg.png"),
+        )
         logging.info('✅ Köppen–Geiger enrichment complete')
     except Exception as e:
         logging.info(f'⚠️ KG enrichment failed: {e}')
@@ -878,8 +920,14 @@ def main_matching_pipeline(
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Run PV technology matching pipeline")
-    parser.add_argument("--input-file", default="data/clustered_dataset_rh_albedo.csv")
-    parser.add_argument("--output-file", default="matched_dataset.csv")
+    parser.add_argument(
+        "--input-file",
+        default=os.path.join(get_path("results_path"), "data", "clustered_dataset_rh_albedo.csv"),
+    )
+    parser.add_argument(
+        "--output-file",
+        default=os.path.join(get_path("results_path"), "matched_dataset.csv"),
+    )
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
     parser.add_argument("--db-table", default=os.getenv("PV_DB_TABLE", "pv_data"))
     args = parser.parse_args()

@@ -18,6 +18,7 @@ import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 import glob
 from scipy import integrate
+from config import get_path
 import logging
 from plot_utils import apply_standard_plot_style, save_figure
 
@@ -889,12 +890,12 @@ def main():
     parser = argparse.ArgumentParser(description="Process SMARTS spectral output")
     parser.add_argument(
         "--input-folder",
-        default="smarts_out_files",
+        default=get_path("smarts_out_path"),
         help="Directory with SMARTS .ext.txt files",
     )
     parser.add_argument(
         "--output-folder",
-        default="spectral_analysis_output",
+        default=os.path.join(get_path("results_path"), "spectral_analysis_output"),
         help="Directory for analysis output",
     )
     args = parser.parse_args()

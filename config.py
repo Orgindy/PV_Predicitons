@@ -76,10 +76,11 @@ class AppConfig:
 class TrainingConfig:
     """Paths for training datasets."""
 
-    train_features: str = "data/X_train.npy"
-    test_features: str = "data/X_test.npy"
-    train_target: str = "data/y_train.npy"
-    test_target: str = "data/y_test.npy"
+    base_dir: str = get_path("results_path")
+    train_features: str = os.path.join(base_dir, "data", "X_train.npy")
+    test_features: str = os.path.join(base_dir, "data", "X_test.npy")
+    train_target: str = os.path.join(base_dir, "data", "y_train.npy")
+    test_target: str = os.path.join(base_dir, "data", "y_test.npy")
 
     @classmethod
     def from_yaml(cls, path: Path) -> "TrainingConfig":

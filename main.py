@@ -7,7 +7,7 @@ from importlib import import_module
 from packaging.requirements import Requirement
 from pathlib import Path
 
-from config import AppConfig
+from config import AppConfig, get_path
 from utils.resource_monitor import ResourceMonitor
 from utils.file_operations import SafeFileOps
 from utils.errors import ErrorAggregator, ProcessingError
@@ -36,7 +36,9 @@ def parse_args():
         help="Pipeline mode",
     )
     parser.add_argument(
-        "--input-file", default="clustered_dataset.csv", help="Path to input CSV file"
+        "--input-file",
+        default=os.path.join(get_path("results_path"), "clustered_dataset.csv"),
+        help="Path to input CSV file",
     )
     parser.add_argument(
         "--db-url", default=os.getenv("PV_DB_URL"), help="Optional database URL"
@@ -96,13 +98,14 @@ def check_dependencies(requirements: Path) -> bool:
 def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
     """Complete RC-PV pipeline using available functions."""
 
-    processed_path = "data/clustered_dataset_enhanced.csv"
-    output_path = "matched_dataset.csv"
+    results_dir = get_path("results_path")
+    data_dir = os.path.join(results_dir, "data")
+    processed_path = os.path.join(data_dir, "clustered_dataset_enhanced.csv")
+    output_path = os.path.join(results_dir, "matched_dataset.csv")
 
     # Create output directories
-    os.makedirs("data", exist_ok=True)
-    os.makedirs("results", exist_ok=True)
-    os.makedirs("results/maps", exist_ok=True)
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(os.path.join(results_dir, "maps"), exist_ok=True)
 
     resources = ResourceMonitor.check_system_resources()
     if not all(resources.values()):
@@ -116,7 +119,7 @@ def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
         except Exception as e:
             logging.error(f"Failed to read table {db_table}: {e}")
             return None
-        input_path = "db_input.csv"
+        input_path = os.path.join(data_dir, "db_input.csv")
         df_db.to_csv(input_path, index=False)
 
     # Step 1: Prepare and enhance dataset
@@ -157,7 +160,8 @@ def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
             )
             _, perf = train_all_models(X_train, X_test, y_train, y_test)
             pd.DataFrame(perf).T.to_csv(
-                "model_performance_summary.csv", index_label="Model"
+                os.path.join(results_dir, "model_performance_summary.csv"),
+                index_label="Model",
             )
             logging.info("✅ Model training complete")
         else:
@@ -206,7 +210,7 @@ def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
         plot_prediction_uncertainty_with_contours(
             df_result,
             use_hatching=False,
-            output_path="results/maps/uncertainty_map.png",
+            output_path=os.path.join(results_dir, "maps", "uncertainty_map.png"),
         )
         logging.info("✅ Uncertainty map generated")
     except Exception as e:
@@ -229,8 +233,10 @@ def run_data_preparation_only():
     """Run only the data preparation step."""
     logging.info("🧼 Running data preparation only")
 
-    input_path = "clustered_dataset.csv"
-    output_path = "data/clustered_dataset_enhanced.csv"
+    results_dir = get_path("results_path")
+    data_dir = os.path.join(results_dir, "data")
+    input_path = os.path.join(results_dir, "clustered_dataset.csv")
+    output_path = os.path.join(data_dir, "clustered_dataset_enhanced.csv")
 
     try:
         result = prepare_clustered_dataset(
@@ -251,11 +257,13 @@ def run_clustering_only():
     """Run only the clustering step."""
     logging.info("🔗 Running clustering only")
 
-    input_path = "data/clustered_dataset_enhanced.csv"
+    results_dir = get_path("results_path")
+    data_dir = os.path.join(results_dir, "data")
+    input_path = os.path.join(data_dir, "clustered_dataset_enhanced.csv")
     if not os.path.exists(input_path):
-        input_path = "clustered_dataset.csv"
+        input_path = os.path.join(results_dir, "clustered_dataset.csv")
 
-    output_path = "matched_dataset.csv"
+    output_path = os.path.join(results_dir, "matched_dataset.csv")
 
     try:
         result = main_matching_pipeline(
@@ -290,11 +298,13 @@ def main():
     mode = args.mode
 
     # Ensure output directories exist
-    os.makedirs("data", exist_ok=True)
+    results_dir = get_path("results_path")
+    data_dir = os.path.join(results_dir, "data")
+    os.makedirs(data_dir, exist_ok=True)
     resources = ResourceMonitor.check_system_resources()
     if not all(resources.values()):
         raise ProcessingError("Insufficient system resources", resources)
-    os.makedirs("results/maps", exist_ok=True)
+    os.makedirs(os.path.join(results_dir, "maps"), exist_ok=True)
 
     logging.info(f"🚀 Starting RC-PV pipeline in '{mode}' mode")
 

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import argparse
 import os
+from config import get_path
 from scipy.spatial import cKDTree
 import plotly.express as px
 import plotly.graph_objects as go
@@ -17,7 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run Streamlit PV dashboard")
     parser.add_argument(
         "--data-path",
-        default="matched_dataset.csv",
+        default=os.path.join(get_path("results_path"), "matched_dataset.csv"),
         help="Path to matched dataset CSV",
     )
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))

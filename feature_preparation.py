@@ -270,7 +270,7 @@ def main_csv_workflow(input_file, validated_file, physics_file, results_dir):
 
     # --- Data Validation ---
     # Save to temp file, validate, then reload
-    temp_input = "temp_input.csv"
+    temp_input = os.path.join(results_dir, "temp_input.csv")
     df.to_csv(temp_input, index=False)
     validate_parameters(temp_input, validated_file, drop_invalid=True)
     df = pd.read_csv(validated_file)
@@ -449,7 +449,7 @@ def main():
         except Exception as e:
             logging.error(f"❌ Failed to read table {args.db_table}: {e}")
             return
-        temp_path = "db_input.csv"
+        temp_path = os.path.join(args.results_dir, "db_input.csv")
         df_db.to_csv(temp_path, index=False)
         main_csv_workflow(temp_path, args.validated_file, args.physics_file, args.results_dir)
         final_csv = os.path.join(args.results_dir, "merged_with_physics_pv.csv")

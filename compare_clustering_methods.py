@@ -8,6 +8,7 @@ from clustering_methods import run_kmeans, run_gmm, run_dbscan, run_agglomerativ
 from sklearn.preprocessing import StandardScaler
 import os
 import matplotlib.pyplot as plt
+from config import get_path
 from plot_utils import apply_standard_plot_style, save_figure
 from sklearn.decomposition import PCA
 
@@ -43,9 +44,10 @@ def main():
     args = parser.parse_args()
 
     n_clusters = args.k
-    input_csv = "clustered_dataset.csv"
-    output_csv = "clustered_dataset_with_methods.csv"
-    score_log = "clustering_scores.csv"
+    results_dir = get_path("results_path")
+    input_csv = os.path.join(results_dir, "clustered_dataset.csv")
+    output_csv = os.path.join(results_dir, "clustered_dataset_with_methods.csv")
+    score_log = os.path.join(results_dir, "clustering_scores.csv")
     
     # Check if input file exists
     if not os.path.exists(input_csv):
