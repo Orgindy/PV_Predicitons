@@ -225,7 +225,7 @@ with st.expander("ℹ️ How this tool works"):
     """)
     
 @st.cache_data
-def load_cluster_dataset(csv_path=DATA_PATH, db_url=DB_URL, db_table=DB_TABLE):
+def load_cluster_dataset(csv_path=DATA_PATH, db_url=DB_URL, db_table=DB_TABLE, uploaded_file=None):
     """
     Load cluster dataset with comprehensive error handling and column detection.
     
@@ -234,7 +234,16 @@ def load_cluster_dataset(csv_path=DATA_PATH, db_url=DB_URL, db_table=DB_TABLE):
     - tree: cKDTree for fast spatial queries
     """
     try:
-        if db_url:
+        if uploaded_file is not None:
+            if not uploaded_file.name.endswith('.csv'):
+                st.error("Uploaded file must be a CSV")
+                return None, None
+            try:
+                df = pd.read_csv(uploaded_file)
+            except Exception as exc:
+                st.error(f"\u274c Failed to read uploaded file: {exc}")
+                return None, None
+        elif db_url:
             from database_utils import read_table
             df = read_table(db_table, db_url=db_url)
         else:
@@ -414,11 +423,13 @@ with st.sidebar:
     st.subheader("⚙️ Simulation Settings")
     
     num_neighbors = st.slider(
-        "Number of Similar Zones", 
+        "Number of Similar Zones",
         1, 10, 5,
         help="Number of similar zones to recommend"
     )
-    
+
+    uploaded_csv = st.file_uploader("Upload matched dataset", type="csv")
+
     show_advanced = st.checkbox("Show Advanced Metrics", value=False)
     
 # Main content area
@@ -431,7 +442,7 @@ with col1:
     data_loading_status = st.empty()
     with data_loading_status:
         with st.spinner("Loading dataset..."):
-            df, tree = load_cluster_dataset(db_url=DB_URL, db_table=DB_TABLE)
+            df, tree = load_cluster_dataset(db_url=DB_URL, db_table=DB_TABLE, uploaded_file=uploaded_csv)
     
     if df is not None and tree is not None:
         data_loading_status.empty()

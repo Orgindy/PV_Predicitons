@@ -164,12 +164,31 @@ def define_spectral_bands(df):
 
 def process_smarts_files(out_file_path, ext_file_path):
     """Process a pair of SMARTS output files and return metadata and band irradiance"""
-    # Read file contents
-    with open(out_file_path, 'r') as f:
-        out_file_content = f.read()
-    
-    with open(ext_file_path, 'r') as f:
-        ext_file_content = f.read()
+    try:
+        with open(out_file_path, 'r') as f:
+            out_file_content = f.read()
+    except FileNotFoundError:
+        print(f"❌ Missing .out file: {out_file_path}")
+        return None, None, None
+    except Exception as exc:
+        print(f"❌ Error reading {out_file_path}: {exc}")
+        return None, None, None
+
+    try:
+        with open(ext_file_path, 'r') as f:
+            ext_file_content = f.read()
+    except FileNotFoundError:
+        print(f"❌ Missing .ext file: {ext_file_path}")
+        return None, None, None
+    except Exception as exc:
+        print(f"❌ Error reading {ext_file_path}: {exc}")
+        return None, None, None
+
+    # Basic validation of ext file structure
+    ext_lines = ext_file_content.strip().split('\n')
+    if not ext_lines or 'Wvlgth' not in ext_lines[0]:
+        print(f"❌ Invalid ext file format: {ext_file_path}")
+        return None, None, None
     
     # Extract metadata
     metadata = extract_metadata(out_file_content)

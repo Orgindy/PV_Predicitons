@@ -1321,7 +1321,7 @@ def create_smarts_input(output_path, params, template_name="smarts_input", metad
         "1 !Card 10b ITILT",
         f"{albedo} 37 180 !Card 10c Tilt variables",
         "48 !Card 11 IALBD",
-        f"{albedo} !Card 11a Albedo value",
+        f"{int(round(albedo))} !Card 11a Albedo value",
         "2 !Card 12 IPRT",
         "280 4000 .5 !Card12a Print limits",
         "4 !Card12b # Variables to Print",

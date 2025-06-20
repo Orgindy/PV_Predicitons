@@ -209,9 +209,8 @@ def combine_band_data(input_folder, output_file):
                 "SWIR",
                 "FIR",
             ]
-            if not all(col in df.columns for col in required_columns):
-                logging.info(f"⚠️ Missing required columns in {csv_file}. Skipping.")
-                continue
+            missing_cols = [c for c in required_columns if c not in df.columns]
+            assert not missing_cols, f"Missing columns {missing_cols} in {csv_file}"
 
             # Merge with the main combined dataset
             combined_df = pd.concat([combined_df, df], ignore_index=True)
@@ -238,6 +237,10 @@ def add_spectral_ratios(input_file, output_file):
     """
     # Load combined band data
     df = pd.read_csv(input_file)
+
+    required_cols = ["UV", "Blue", "Green", "Red", "NIR", "SWIR", "FIR"]
+    missing = [c for c in required_cols if c not in df.columns]
+    assert not missing, f"Missing spectral columns: {missing}"
 
     # Calculate total irradiance
     df["Total_Irradiance"] = df[

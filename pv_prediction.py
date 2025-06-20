@@ -29,6 +29,19 @@ from utils.feature_utils import (
 )
 from sklearn.gaussian_process.kernels import RBF
 
+def validate_dataset_file(path):
+    """Return True if merged dataset exists and is readable."""
+    if not os.path.isfile(path):
+        logging.error(f"Dataset file not found: {path}")
+        return False
+    try:
+        with open(path, "r"):
+            pass
+    except Exception as exc:
+        logging.error(f"Cannot read dataset {path}: {exc}")
+        return False
+    return True
+
 # -----------------------------
 # PV Cell Profile Management
 # -----------------------------
@@ -356,8 +369,8 @@ def prepare_features_for_clustering(df, feature_cols):
 
 
 def main_clustering_pipeline(input_file=get_path('merged_data_path'), output_dir=get_path('results_path'), n_clusters=5):
-    if not os.path.isfile(input_file):
-        raise FileNotFoundError(f"Input file not found: {input_file}")
+    if not validate_dataset_file(input_file):
+        raise FileNotFoundError(f"Input file not found or unreadable: {input_file}")
     df = pd.read_csv(input_file)
     logging.info("Calculating physics-based PV Potential...")
     df['PV_Potential_physics'] = calculate_pv_potential(

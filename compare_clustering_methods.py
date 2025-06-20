@@ -29,6 +29,10 @@ def load_and_scale_data(csv_path, feature_columns):
 
 def apply_and_store(df, X, method_name, method_func, **kwargs):
     try:
+        n_clusters = kwargs.get('n_clusters')
+        if n_clusters and X.shape[0] <= n_clusters:
+            print(f"⚠️ Not enough samples for {method_name}")
+            return (method_name, None)
         labels, score = method_func(X, **kwargs)
         col_name = f"Cluster_{method_name}"
         df[col_name] = labels

@@ -16,9 +16,14 @@ def run_kmeans(X, n_clusters=5, random_state=42):
         labels (np.ndarray): Cluster labels
         score (float): Silhouette score
     """
+    if X.shape[0] <= n_clusters:
+        raise ValueError("Number of samples must exceed number of clusters")
     model = KMeans(n_clusters=n_clusters, random_state=random_state)
     labels = model.fit_predict(X)
-    score = silhouette_score(X, labels)
+    try:
+        score = silhouette_score(X, labels)
+    except Exception:
+        score = -1
     return labels, score
 
 def run_gmm(X, n_clusters=5, random_state=42):
