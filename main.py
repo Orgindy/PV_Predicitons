@@ -7,7 +7,12 @@ from importlib import import_module
 from packaging.requirements import Requirement
 from pathlib import Path
 
-from config import AppConfig, get_path
+try:
+    from config import AppConfig, get_path, get_nc_dir
+except Exception as exc:
+    raise RuntimeError(f"Failed to load configuration: {exc}") from exc
+
+from check_db_connection import main as check_db
 from utils.resource_monitor import ResourceMonitor
 from utils.file_operations import SafeFileOps
 from utils.errors import ErrorAggregator, ProcessingError
@@ -35,9 +40,15 @@ def parse_args():
         choices=["full", "prep", "cluster"],
         help="Pipeline mode",
     )
+    try:
+        results_dir = get_path("results_path")
+        default_input = os.path.join(results_dir, "clustered_dataset.csv")
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Invalid results_path in configuration: {exc}") from exc
+
     parser.add_argument(
         "--input-file",
-        default=os.path.join(get_path("results_path"), "clustered_dataset.csv"),
+        default=default_input,
         help="Path to input CSV file",
     )
     parser.add_argument(
@@ -98,7 +109,10 @@ def check_dependencies(requirements: Path) -> bool:
 def main_rc_pv_pipeline(input_path, db_url=None, db_table="pv_data"):
     """Complete RC-PV pipeline using available functions."""
 
-    results_dir = get_path("results_path")
+    try:
+        results_dir = get_path("results_path")
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Configured results_path invalid: {exc}") from exc
     data_dir = os.path.join(results_dir, "data")
     processed_path = os.path.join(data_dir, "clustered_dataset_enhanced.csv")
     output_path = os.path.join(results_dir, "matched_dataset.csv")
@@ -233,7 +247,10 @@ def run_data_preparation_only():
     """Run only the data preparation step."""
     logging.info("🧼 Running data preparation only")
 
-    results_dir = get_path("results_path")
+    try:
+        results_dir = get_path("results_path")
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Configured results_path invalid: {exc}") from exc
     data_dir = os.path.join(results_dir, "data")
     input_path = os.path.join(results_dir, "clustered_dataset.csv")
     output_path = os.path.join(data_dir, "clustered_dataset_enhanced.csv")
@@ -257,7 +274,10 @@ def run_clustering_only():
     """Run only the clustering step."""
     logging.info("🔗 Running clustering only")
 
-    results_dir = get_path("results_path")
+    try:
+        results_dir = get_path("results_path")
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Configured results_path invalid: {exc}") from exc
     data_dir = os.path.join(results_dir, "data")
     input_path = os.path.join(data_dir, "clustered_dataset_enhanced.csv")
     if not os.path.exists(input_path):
@@ -284,6 +304,13 @@ def main():
     """Main execution function with error handling and options."""
 
     args = parse_args()
+    try:
+        check_db(None, get_nc_dir())
+        if args.db_url:
+            check_db(args.db_url)
+    except Exception as exc:
+        raise RuntimeError(f"Data or database validation failed: {exc}") from exc
+
     save_config(vars(args), "logs")
     config = AppConfig.from_env()
     if error := config.validate():
@@ -298,7 +325,10 @@ def main():
     mode = args.mode
 
     # Ensure output directories exist
-    results_dir = get_path("results_path")
+    try:
+        results_dir = get_path("results_path")
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Configured results_path invalid: {exc}") from exc
     data_dir = os.path.join(results_dir, "data")
     os.makedirs(data_dir, exist_ok=True)
     resources = ResourceMonitor.check_system_resources()

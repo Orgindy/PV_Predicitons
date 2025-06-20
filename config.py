@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import logging
 import yaml
 from typing import Dict, Any, Optional
 
@@ -18,12 +19,39 @@ def load_config(path: Path = CONFIG_FILE) -> Dict[str, Any]:
         return {}
 
 
-CONFIG = load_config()
+REQUIRED_KEYS = ["DATA_FOLDER", "MODEL_PATH", "DB_PATH"]
+
+
+def validate_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate presence of required keys and path integrity."""
+    for key in REQUIRED_KEYS:
+        value = cfg.get(key)
+        if value is None:
+            logging.warning("Missing required config key %s", key)
+            raise KeyError(f"Missing config key: {key}")
+        if ("PATH" in key or "DIR" in key) and isinstance(value, str):
+            if not os.path.exists(value):
+                logging.warning("Configured path for %s does not exist: %s", key, value)
+    output_dir = cfg.get("OUTPUT_DIR", "./outputs")
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+    cfg.setdefault("OUTPUT_DIR", output_dir)
+    return cfg
+
+
+CONFIG = validate_config(load_config())
 
 
 def get_path(key: str, default: Optional[str] = None) -> Optional[str]:
-    """Return a configured path by key."""
-    return CONFIG.get(key, default)
+    """Return a configured path by key with validation."""
+    value = CONFIG.get(key, default)
+    if value is None:
+        logging.warning("Configuration key %s not found; using default %s", key, default)
+        return value
+    if ("PATH" in key or "DIR" in key) and isinstance(value, str):
+        if not os.path.exists(value):
+            raise FileNotFoundError(f"Configured path for {key} does not exist: {value}")
+    return value
 
 @dataclass
 class AppConfig:
