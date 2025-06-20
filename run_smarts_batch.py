@@ -296,7 +296,15 @@ def main():
         timeout=args.timeout,
     )
 
-    if not ensure_directory(cfg.inp_dir) or not ensure_directory(cfg.out_dir):
+    if not Path(cfg.smarts_exe).exists():
+        print(f"❌ SMARTS executable not found: {cfg.smarts_exe}")
+        return
+
+    if not cfg.inp_dir.exists():
+        print(f"❌ Input directory does not exist: {cfg.inp_dir}")
+        return
+
+    if not ensure_directory(cfg.out_dir):
         return
 
     inp_files = list(cfg.inp_dir.glob("*.inp"))

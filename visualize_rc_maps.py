@@ -87,14 +87,15 @@ def create_yearly_maps(yearly_df, output_dir, boundaries):
         output_dir (str): Directory to save output maps
         boundaries (tuple): (lon_min, lon_max, lat_min, lat_max) boundary coordinates
     """
-    lon_min, lon_max, lat_min, lat_max = boundaries
-    
-    # Select the most recent year if multiple years are available
-    latest_year = yearly_df['year'].max()
-    df_year = yearly_df[yearly_df['year'] == latest_year]
-    
-    # Create a figure with two maps side by side
-    fig = plt.figure(figsize=(18, 8))
+    try:
+        lon_min, lon_max, lat_min, lat_max = boundaries
+
+        # Select the most recent year if multiple years are available
+        latest_year = yearly_df['year'].max()
+        df_year = yearly_df[yearly_df['year'] == latest_year]
+
+        # Create a figure with two maps side by side
+        fig = plt.figure(figsize=(18, 8))
     
     # Setup for both plots
     projection = ccrs.PlateCarree()
@@ -176,9 +177,11 @@ def create_yearly_maps(yearly_df, output_dir, boundaries):
     apply_standard_plot_style(ax2, grid=False)
 
     output_file = os.path.join(output_dir, f'yearly_rc_potential_{latest_year}.{OUTPUT_FORMAT}')
-    save_figure(fig, os.path.basename(output_file), folder=output_dir)
+        save_figure(fig, os.path.basename(output_file), folder=output_dir)
 
-    print(f"Saved yearly map to: {output_file}")
+        print(f"Saved yearly map to: {output_file}")
+    except Exception as exc:
+        print(f"Error creating yearly maps: {exc}")
 
 
 def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
@@ -191,11 +194,12 @@ def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
         boundaries (tuple): (lon_min, lon_max, lat_min, lat_max) boundary coordinates
         variable (str): Variable to plot ('P_rc_basic' or 'P_rc_net')
     """
-    lon_min, lon_max, lat_min, lat_max = boundaries
-    
-    # Select the most recent year if multiple years are available
-    latest_year = seasonal_df['year'].max()
-    df_year = seasonal_df[seasonal_df['year'] == latest_year]
+    try:
+        lon_min, lon_max, lat_min, lat_max = boundaries
+
+        # Select the most recent year if multiple years are available
+        latest_year = seasonal_df['year'].max()
+        df_year = seasonal_df[seasonal_df['year'] == latest_year]
     
     # Check if the variable exists
     if variable not in df_year.columns:
@@ -291,7 +295,9 @@ def create_seasonal_maps(seasonal_df, output_dir, boundaries, variable):
     )
     save_figure(fig, os.path.basename(output_file), folder=output_dir)
 
-    print(f"Saved seasonal {variable} map to: {output_file}")
+        print(f"Saved seasonal {variable} map to: {output_file}")
+    except Exception as exc:
+        print(f"Error creating seasonal maps: {exc}")
 
 
 def main():

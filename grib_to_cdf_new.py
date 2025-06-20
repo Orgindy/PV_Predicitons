@@ -200,21 +200,21 @@ def grib_to_netcdf(input_file, output_folder):
     output_file = os.path.join(output_folder, f"{base_name}.nc")
     
     try:
-        # Open the GRIB file using cfgrib engine with additional options for better compatibility
         ds = xr.open_dataset(
-            input_file, 
+            input_file,
             engine='cfgrib',
-            backend_kwargs={
-                'errors': 'ignore',  # Skip unreadable messages
-                'filter_by_keys': {}  # Don't filter any messages
-            }
+            backend_kwargs={'errors': 'ignore', 'filter_by_keys': {}}
         )
-        
-        # Save to NetCDF with compression for smaller file size
-        ds.to_netcdf(
-            output_file,
-            encoding={var: {'zlib': True, 'complevel': 5} for var in ds.data_vars}
-        )
+    
+        try:
+            ds.to_netcdf(
+                output_file,
+                encoding={var: {'zlib': True, 'complevel': 5} for var in ds.data_vars}
+            )
+        except Exception as e:
+            logger.error(f"Failed to write NetCDF for {base_filename}: {e}")
+            ds.close()
+            return None
         
         # Close the dataset to free memory
         ds.close()
@@ -223,7 +223,7 @@ def grib_to_netcdf(input_file, output_folder):
         return output_file
     
     except Exception as e:
-        logger.error(f"Error converting {base_filename}: {e}")
+        logger.error(f"Error opening GRIB file {base_filename}: {e}")
         return None
 
 def convert_all_grib_files(grib_folder, output_folder):
@@ -493,7 +493,13 @@ def main():
     # Step 0: Check dependencies
     if not check_dependencies():
         logger.error("Missing required dependencies. Continuing without.")
-    
+
+    if not os.path.isdir(GRIB_FOLDER):
+        logger.error(f"Invalid GRIB folder: {GRIB_FOLDER}")
+        return
+
+    ensure_dir_exists(NETCDF_OUTPUT_FOLDER)
+
     # Step 1: Convert all GRIB files to NetCDF
     netcdf_files = convert_all_grib_files(GRIB_FOLDER, NETCDF_OUTPUT_FOLDER)
     
