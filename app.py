@@ -4,7 +4,11 @@ import numpy as np
 import pandas as pd
 import argparse
 import os
-from config import get_path
+try:
+    from config import get_path
+except Exception as exc:
+    raise RuntimeError(f"Failed to load configuration: {exc}") from exc
+from check_db_connection import main as check_db
 from scipy.spatial import cKDTree
 import plotly.express as px
 import plotly.graph_objects as go
@@ -16,9 +20,15 @@ warnings.filterwarnings('ignore')
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run Streamlit PV dashboard")
+    try:
+        results_dir = get_path("results_path")
+        default_data = os.path.join(results_dir, "matched_dataset.csv")
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Invalid results_path in configuration: {exc}") from exc
+
     parser.add_argument(
         "--data-path",
-        default=os.path.join(get_path("results_path"), "matched_dataset.csv"),
+        default=default_data,
         help="Path to matched dataset CSV",
     )
     parser.add_argument("--db-url", default=os.getenv("PV_DB_URL"))
@@ -29,6 +39,13 @@ ARGS = parse_args()
 DATA_PATH = ARGS.data_path
 DB_URL = ARGS.db_url
 DB_TABLE = ARGS.db_table
+
+try:
+    check_db(None, DATA_PATH)
+    if DB_URL:
+        check_db(DB_URL)
+except Exception as exc:
+    raise RuntimeError(f"Data or database validation failed: {exc}") from exc
 
 def compute_temperature_series(ghi, tair, ir_down, wind, zenith, material_config,
                              switching_profile, emissivity_profile, alpha_profile):

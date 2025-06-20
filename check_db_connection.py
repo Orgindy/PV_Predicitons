@@ -6,19 +6,34 @@ from sqlalchemy.exc import SQLAlchemyError
 from utils.errors import SynergyDatabaseError
 
 
+def _validate_data_path(path: str) -> None:
+    """Validate that the path points to an existing .nc or .db file or directory."""
+    if not os.path.exists(path):
+        logging.error("Path does not exist: %s", path)
+        raise FileNotFoundError(path)
+
+    if os.path.isdir(path):
+        entries = os.listdir(path)
+        if not any(e.endswith((".nc", ".db")) for e in entries):
+            logging.error("No .nc or .db files found in directory %s", path)
+            raise FileNotFoundError(f"Missing .nc or .db files in {path}")
+        logging.info("Validated directory %s", path)
+        return
+
+    if not path.endswith(('.nc', '.db')):
+        logging.error("Unsupported file extension for %s", path)
+        raise ValueError("Expected .nc or .db file")
+    logging.info("Validated file %s", path)
+
+
 def main(db_url: str | None = None, path: str | None = None) -> int:
     """Check that a database or NetCDF path is reachable."""
     if path:
-        if os.path.isdir(path) or os.path.isfile(path):
-            logging.info("Found path: %s", path)
-            return 0
-        logging.warning("Path does not exist: %s - creating", path)
         try:
-            os.makedirs(path, exist_ok=True)
-            logging.info("Created path: %s", path)
+            _validate_data_path(path)
             return 0
-        except Exception as exc:
-            logging.error("Could not create path %s: %s", path, exc)
+        except (FileNotFoundError, ValueError) as exc:
+            logging.error("Data path validation failed: %s", exc)
             return 1
 
     url = db_url or DEFAULT_DB_URL
