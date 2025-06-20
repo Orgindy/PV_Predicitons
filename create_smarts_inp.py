@@ -1338,7 +1338,7 @@ def create_smarts_input(output_path, params, template_name="smarts_input", metad
     # Save file
     try:
         with open(filepath, 'w') as f:
-            f.write('\n'.join(content))
+            f.write('\n'.join(content) + '\n')
         
         # Save metadata if requested
         if metadata_dir:

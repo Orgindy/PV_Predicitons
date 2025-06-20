@@ -1,5 +1,7 @@
 from sklearn_extra.cluster import KMedoids
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+import numpy as np
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -9,7 +11,14 @@ from config import get_path
 
 from utils.sky_temperature import calculate_sky_temperature_improved
 
-def rc_only_clustering(df, features=None, n_clusters=5, cluster_col='RC_Cluster', model_path=None):
+def rc_only_clustering(
+    df,
+    features=None,
+    n_clusters=5,
+    cluster_col='RC_Cluster',
+    model_path=None,
+    feature_weights=None,
+):
     """
     Perform K-Medoids clustering based on RC potential and thermal features.
 
@@ -29,6 +38,9 @@ def rc_only_clustering(df, features=None, n_clusters=5, cluster_col='RC_Cluster'
     df_subset = df.dropna(subset=features).copy()
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(df_subset[features])
+    if feature_weights:
+        weights = np.array([feature_weights.get(f, 1.0) for f in features])
+        X_scaled = X_scaled * weights
 
     model = KMedoids(n_clusters=n_clusters, random_state=42, metric='euclidean', init='k-medoids++')
     labels = model.fit_predict(X_scaled)

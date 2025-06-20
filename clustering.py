@@ -36,8 +36,10 @@ except ImportError:
 def prepare_clustered_dataset(
     input_path=os.path.join(get_path("results_path"), "clustered_dataset_rh.csv"),
     output_path=os.path.join(get_path("results_path"), "clustered_dataset_rh_albedo.csv"),
-                               db_url=None,
-                               db_table=None):
+    db_url=None,
+    db_table=None,
+    feature_weights=None,
+):
     """
     Load dataset, recompute RH if needed, apply clustering, and save enhanced file.
     """
@@ -140,8 +142,14 @@ def prepare_clustered_dataset(
         logging.info(f"🔧 Filling {missing_count} missing values with median")
         X = X.fillna(X.median())
     
-    # Scale and apply clustering
-    X_scaled = StandardScaler().fit_transform(X)
+    # Scale features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # Apply optional feature weights after scaling
+    if feature_weights:
+        weights = np.array([feature_weights.get(col, 1.0) for col in feature_columns])
+        X_scaled = X_scaled * weights
     model = KMeans(n_clusters=5, random_state=42)
     df["Cluster_ID"] = model.fit_predict(X_scaled)
 
