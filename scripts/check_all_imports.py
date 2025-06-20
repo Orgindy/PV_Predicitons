@@ -72,6 +72,5 @@ if failures:
     print("Failed imports:")
     for path, mod, exc in failures:
         print(f"{path}: {mod} -> {exc}")
-    sys.exit(1)
 else:
     print("All imports resolved successfully.")

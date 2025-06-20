@@ -7,9 +7,14 @@ Created on Mon May 26 12:21:06 2025
 import os
 import pandas as pd
 import numpy as np
+import logging
+import warnings
 from config import get_path
 
 EMOJI_ENABLED = True
+
+logger = logging.getLogger(__name__)
+
 
 def calculate_synergy_index(
     T_pv,
@@ -40,7 +45,21 @@ def calculate_synergy_index(
     
     # Validate inputs
     if len(T_pv) != len(T_rc) or len(T_pv) != len(GHI):
-        raise ValueError("Input arrays must have the same length")
+        min_len = min(len(T_pv), len(T_rc), len(GHI))
+        warnings.warn(
+            "Input arrays have mismatched lengths; truncating to match",
+            stacklevel=2,
+        )
+        logger.warning(
+            "Mismatched array lengths (PV=%s, RC=%s, GHI=%s); truncating to %s",
+            len(T_pv),
+            len(T_rc),
+            len(GHI),
+            min_len,
+        )
+        T_pv = T_pv[:min_len]
+        T_rc = T_rc[:min_len]
+        GHI = GHI[:min_len]
     
     delta_T = T_pv - T_rc  # Cooling benefit [°C]
     # PV temperature coefficient is typically negative (efficiency drops with
@@ -88,7 +107,11 @@ def add_synergy_index(df, gamma_pv=-0.004, rc_energy_col=None):
     required_cols = ["T_PV", "T_RC", "GHI"]
     missing_cols = [c for c in required_cols if c not in df.columns]
     if missing_cols:
-        raise ValueError(f"Missing required columns: {missing_cols}")
+        warnings.warn(
+            f"Missing required columns: {missing_cols}", stacklevel=2
+        )
+        logger.warning("Missing required columns: %s", missing_cols)
+        return df
 
     df = df.copy()
     delta_T = df["T_PV"] - df["T_RC"]
@@ -161,7 +184,11 @@ def calculate_synergy_metrics_summary(df, group_by_cols=None):
         single-row DataFrame with the descriptive statistics is returned.
     """
     if 'Synergy_Index' not in df.columns:
-        raise ValueError("DataFrame must contain 'Synergy_Index' column")
+        warnings.warn(
+            "DataFrame must contain 'Synergy_Index' column", stacklevel=2
+        )
+        logger.warning("DataFrame missing 'Synergy_Index' column")
+        return pd.DataFrame()
     
     if group_by_cols:
         summary = df.groupby(group_by_cols)['Synergy_Index'].agg([

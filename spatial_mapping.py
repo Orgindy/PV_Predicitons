@@ -6,6 +6,8 @@ from shapely.geometry import Point
 import matplotlib.pyplot as plt
 import seaborn as sns
 import contextily as ctx
+import logging
+import warnings
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from config import get_path
@@ -57,9 +59,16 @@ def overlay_technology_matches(
     - output_path: file path to save PNG output.
     """
     if not isinstance(geo_df, gpd.GeoDataFrame):
-        raise ValueError("Input must be a GeoDataFrame with geometry column.")
+        warnings.warn("Input must be a GeoDataFrame with geometry column.")
+        logging.warning("Input is not GeoDataFrame; returning without plotting")
+        return
     if geo_df.crs is None or geo_df.crs.to_epsg() != 4326:
-        raise ValueError("GeoDataFrame must use geographic CRS EPSG:4326")
+        warnings.warn("GeoDataFrame must use geographic CRS EPSG:4326")
+        logging.warning("GeoDataFrame CRS not EPSG:4326; attempting to set")
+        try:
+            geo_df = geo_df.set_crs(4326)
+        except Exception:
+            return
 
     geo_df = geo_df.to_crs(epsg=3857)  # Web Mercator for plotting with basemaps
 

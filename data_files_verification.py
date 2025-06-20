@@ -137,6 +137,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not os.path.isdir(args.directory):
-        raise SystemExit(f"Directory not found: {args.directory}")
+        logging.warning("Directory not found: %s - creating", args.directory)
+        os.makedirs(args.directory, exist_ok=True)
 
     main(args.directory)

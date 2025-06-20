@@ -1,16 +1,36 @@
 import numpy as np
+import logging
+import warnings
 from typing import Union, Tuple
 
 from constants import PV_CONSTANTS, PHYSICAL_LIMITS
 
 
+logger = logging.getLogger(__name__)
+
+
 def validate_temperature_coefficient(temp_coeff: float) -> float:
-    """Validate temperature coefficient is within physical bounds."""
-    if not isinstance(temp_coeff, (int, float)):
-        raise TypeError("Temperature coefficient must be a number")
-    if not -0.01 <= temp_coeff <= 0:
-        raise ValueError("Temperature coefficient must be between -0.01 and 0")
-    return float(temp_coeff)
+    """Validate temperature coefficient, clamping to safe bounds."""
+    try:
+        coeff = float(temp_coeff)
+    except Exception:
+        warnings.warn(
+            "Temperature coefficient must be numeric, using default -0.004",
+            stacklevel=2,
+        )
+        logger.warning("Invalid temperature coefficient '%s', using default", temp_coeff)
+        return -0.004
+
+    if coeff < -0.01:
+        warnings.warn("Temperature coefficient below -0.01, clamping", stacklevel=2)
+        logger.warning("Temperature coefficient %s below -0.01, clamping", coeff)
+        coeff = -0.01
+    elif coeff > 0:
+        warnings.warn("Temperature coefficient above 0, clamping", stacklevel=2)
+        logger.warning("Temperature coefficient %s above 0, clamping", coeff)
+        coeff = 0.0
+
+    return coeff
 
 
 def validate_pv_inputs(
@@ -33,9 +53,17 @@ def validate_pv_inputs(
     for name, (value, min_val, max_val) in inputs.items():
         arr = np.asarray(value, dtype=float)
         if min_val is not None and np.any(arr < min_val):
-            raise ValueError(f"{name} contains values below {min_val}")
+            warnings.warn(
+                f"{name} values below {min_val} clamped", stacklevel=2
+            )
+            logger.warning("%s values below %s clamped", name, min_val)
+            arr = np.clip(arr, min_val, None)
         if max_val is not None and np.any(arr > max_val):
-            raise ValueError(f"{name} contains values above {max_val}")
+            warnings.warn(
+                f"{name} values above {max_val} clamped", stacklevel=2
+            )
+            logger.warning("%s values above %s clamped", name, max_val)
+            arr = np.clip(arr, None, max_val)
         validated[name] = arr
 
     return (

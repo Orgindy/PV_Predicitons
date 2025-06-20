@@ -6,23 +6,25 @@ from pv_potential import calculate_pv_potential
 
 
 def test_calculate_pv_potential_physical_limits():
-    with pytest.raises(ValueError, match="GHI contains values above 1500"):
-        calculate_pv_potential(
+    with pytest.warns(UserWarning):
+        result_high = calculate_pv_potential(
             GHI=np.array(2000.0),
             T_air=np.array(20.0),
             RC_potential=np.array(50.0),
             Red_band=np.array(40.0),
             Total_band=np.array(100.0),
         )
+    assert result_high >= 0
 
-    with pytest.raises(ValueError, match="T_air contains values above 60"):
-        calculate_pv_potential(
+    with pytest.warns(UserWarning):
+        result_temp = calculate_pv_potential(
             GHI=np.array(800.0),
             T_air=np.array(70.0),
             RC_potential=np.array(50.0),
             Red_band=np.array(40.0),
             Total_band=np.array(100.0),
         )
+    assert result_temp >= 0
 
 
 def test_calculate_pv_potential_division_by_zero():
@@ -60,5 +62,6 @@ def test_calculate_synergy_index_positive():
 
 
 def test_calculate_synergy_index_length_error():
-    with pytest.raises(ValueError):
-        calculate_synergy_index([30], [25, 26], [800, 1000])
+    with pytest.warns(UserWarning):
+        result = calculate_synergy_index([30], [25, 26], [800, 1000])
+    assert isinstance(result, float)

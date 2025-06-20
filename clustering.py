@@ -337,8 +337,13 @@ def compute_pv_potential_by_cluster_year(
     if year_col not in df.columns:
         if 'time' in df.columns:
             df[year_col] = pd.to_datetime(df['time'], errors='coerce').dt.year
+            logging.warning("Year column missing, derived from 'time'")
         else:
-            raise ValueError(f"Column '{year_col}' not found and no 'time' column to derive from.")
+            logging.warning(
+                "Column '%s' not found and no 'time' column; using 0 as placeholder",
+                year_col,
+            )
+            df[year_col] = 0
 
     grouped = df.groupby([cluster_col, year_col]).agg(
         Total_PV_Potential=(pv_col, 'sum'),

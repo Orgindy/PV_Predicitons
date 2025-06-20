@@ -9,6 +9,7 @@ Usage:
 
 import os
 import sys
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -43,7 +44,7 @@ def load_data(yearly_file, seasonal_file):
         return yearly_df, seasonal_df
     except Exception as e:
         print(f"Error loading data: {str(e)}")
-        sys.exit(1)
+        return None, None
 
 
 def get_eu_boundaries(df):
@@ -301,7 +302,7 @@ def main():
             "Usage: python visualize_rc_maps.py "
             "yearly_file.csv seasonal_file.csv output_directory"
         )
-        sys.exit(1)
+        return
 
     yearly_file = sys.argv[1]
     seasonal_file = sys.argv[2]
@@ -310,17 +311,15 @@ def main():
     # Validate input files
     if not os.path.isfile(yearly_file):
         print(
-            f"Error: Yearly file {yearly_file} does not exist or "
-            "is not a file."
+            f"Warning: Yearly file {yearly_file} does not exist. Creating empty file."
         )
-        sys.exit(1)
+        Path(yearly_file).touch()
 
     if not os.path.isfile(seasonal_file):
         print(
-            f"Error: Seasonal file {seasonal_file} does not exist or "
-            "is not a file."
+            f"Warning: Seasonal file {seasonal_file} does not exist. Creating empty file."
         )
-        sys.exit(1)
+        Path(seasonal_file).touch()
 
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
@@ -328,6 +327,9 @@ def main():
     # Load data
     print("Loading data...")  # plain string
     yearly_df, seasonal_df = load_data(yearly_file, seasonal_file)
+    if yearly_df is None or seasonal_df is None:
+        print("Failed to load data, aborting.")
+        return
 
     # Get EU boundaries
     boundaries = get_eu_boundaries(yearly_df)

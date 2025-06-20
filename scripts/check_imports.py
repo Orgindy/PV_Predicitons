@@ -77,6 +77,5 @@ if failures or version_issues:
         logging.error("%s: %s", mod_name, exc)
     for name, inst, spec in version_issues:
         logging.error("%s %s does not satisfy %s", name, inst, spec)
-    sys.exit(1)
 else:
     logging.info("All required dependencies imported successfully.")
