@@ -39,7 +39,7 @@ class BatchConfig:
 def parse_args():
     """Return config-based arguments (CLI removed)."""
     return argparse.Namespace(
-        smarts_exe="smarts295bat.exe",
+        smarts_exe=os.getenv("SMARTS_EXE") or "smarts295bat.exe",
         inp_dir=get_path("smarts_inp_path"),
         out_dir=get_path("smarts_out_path"),
         timeout=300,

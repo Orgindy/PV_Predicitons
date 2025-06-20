@@ -113,7 +113,7 @@ def calculate_qnet_vectorized(df: pd.DataFrame,
         raise ValueError("No temperature column found (expected 'T_air' or 'T2M')")
     
     T_air_K = T_air + 273.15
-    SW = df.get('ALLSKY_SFC_SW_DWN', pd.Series(0.0, index=df.index))
+    SW = df.get('ALLSKY_SFC_SW_DWN', pd.Series(0.0, index=df.index)) / 3600.0
     
     # Use proper sky temperature calculation
     RH = df.get('RH', 50)  # Default RH if not available
@@ -127,6 +127,7 @@ def calculate_qnet_vectorized(df: pd.DataFrame,
     Q_solar_abs = (1 - rho) * SW
     
     qnet = Q_rad_out - Q_rad_in - Q_solar_abs
+    qnet = np.maximum(qnet, 0)
     
     return qnet
 
@@ -480,7 +481,10 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
         .agg({
             'QNET': [
                 ('annual_mean', 'mean'),
-                ('annual_total', lambda x: x.sum() / 1000.0)  # converting Wh to kWh
+                (
+                    'annual_total',
+                    lambda x: x.mean() * len(x) / 1000.0,
+                )  # kWh/m² per year with leap year awareness
             ]
         })
         .reset_index()
